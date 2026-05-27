@@ -1,8 +1,11 @@
 """Service layer for formatting chat responses as Server-Sent Events."""
 
 import json
+import logging
 
 from rag_engine.rag.pipeline import ask
+
+logger = logging.getLogger(__name__)
 
 
 def _sse(event: dict) -> str:
@@ -20,6 +23,7 @@ def stream_chat(query: str, history: str = ""):
     try:
         result = ask(query, history=history)
     except Exception as exc:
+        logger.exception("Chat request failed.")
         yield _sse({"error": str(exc)})
         yield _sse({"done": True, "sources": []})
         return

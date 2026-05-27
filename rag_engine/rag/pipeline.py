@@ -37,7 +37,3 @@ def ask(query: str, history: str, db=None, temperature: float | None = None, top
         "sources": result.get("sources", []),
         "error": result.get("error"),
     }
-
-
-# def ask_rag(db, history, query, creative_level=0.1):
-#     return ask(query, history=history, db=db, temperature=creative_level)["answer"]

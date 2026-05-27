@@ -1,4 +1,4 @@
-from pathlib import types
+from google.genai import types
 from rag_engine.core.config import settings
 from ollama import chat
 from google import genai
@@ -19,7 +19,7 @@ def _generate_ollama(system_prompt: str, user_prompt: str, temperature: float) -
     """
 
     response = chat(
-        model=settings.ollama_model,
+        model=settings.llm_model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
@@ -52,7 +52,7 @@ def _generate_gemini(system_prompt: str, user_prompt: str, temperature: float) -
 
     client = genai.Client(api_key=settings.gemini_api_key)
     response = client.models.generate_content(
-        model=settings.gemini_model,
+        model=settings.llm_model,
         contents=user_prompt,
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
@@ -65,7 +65,7 @@ def _generate_gemini(system_prompt: str, user_prompt: str, temperature: float) -
 
 
 def _active_model_name() -> str:
-    """Get the name of the active LLM model based on the configuration."""
+    """Get the active LLM generator based on the configuration."""
     if settings.llm_provider == "gemini":
         return _generate_gemini
     return _generate_ollama
@@ -104,7 +104,7 @@ def rewrite_query_for_retrieval(query: str, history: str = "") -> str:
     {history}
     
     SYSTEM PROMPT:
-    Dựa vào lịch sử trò chuyện và câu hỏi của người dùng, hãy viết lại câu hỏi theo cách rõ ràng, dễ hiểu hơn, để {settings.ollama_model} có thể hiểu được nhưng vẫn giữ nguyên ý nghĩa. Câu hỏi sẽ được sử dụng để tìm kiếm tài liệu liên quan trong cơ sở dữ liệu, vì vậy hãy đảm bảo rằng nó chứa các từ khóa quan trọng và được diễn đạt một cách chính xác.
+    Dựa vào lịch sử trò chuyện và câu hỏi của người dùng, hãy viết lại câu hỏi theo cách rõ ràng, dễ hiểu hơn, để {settings.llm_model} có thể hiểu được nhưng vẫn giữ nguyên ý nghĩa. Câu hỏi sẽ được sử dụng để tìm kiếm tài liệu liên quan trong cơ sở dữ liệu, vì vậy hãy đảm bảo rằng nó chứa các từ khóa quan trọng và được diễn đạt một cách chính xác.
     """
     
     llm = _active_model_name()
