@@ -1,5 +1,3 @@
-"""Backend Qdrant Cloud: tạo collection, ingest chunks và load vector store."""
-
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
@@ -9,7 +7,7 @@ from rag_engine.core.embedding import get_embeddings
 
 
 def _get_client() -> QdrantClient:
-    """Khởi tạo Qdrant client trỏ tới Qdrant Cloud."""
+    """Initialize a Qdrant client pointing to Qdrant Cloud."""
     if not settings.qdrant_url:
         raise ValueError("QDRANT_URL is required when using Qdrant backend.")
     return QdrantClient(
@@ -20,15 +18,22 @@ def _get_client() -> QdrantClient:
 
 
 def _embedding_dim() -> int:
-    """Lấy số chiều embedding bằng cách nhúng thử một chuỗi ngắn."""
+    """
+    Get the embedding dimension by embedding a test string.
+    
+    Returns:
+        int: The dimension of the embedding vectors. 1024 is default for BAAI/bge-m3, but this method allows dynamic detection in case the model changes.
+    """
     return len(get_embeddings().embed_query("dim probe"))
 
 
-def _ensure_collection(client: QdrantClient, name: str, dim: int) -> None:
-    """Tạo collection nếu chưa tồn tại; giữ nguyên nếu đã có."""
-    existing = {c.name for c in client.get_collections().collections}
-    if name in existing:
-        return
+def _collection_names(client: QdrantClient) -> set[str]:
+    """Return all collection names currently available in Qdrant."""
+    return {c.name for c in client.get_collections().collections}
+
+
+def _create_collection(client: QdrantClient, name: str, dim: int) -> None:
+    """Create a Qdrant collection with the expected vector configuration."""
     client.create_collection(
         collection_name=name,
         vectors_config=qmodels.VectorParams(
@@ -38,14 +43,30 @@ def _ensure_collection(client: QdrantClient, name: str, dim: int) -> None:
     )
 
 
+def _recreate_collection(client: QdrantClient, name: str, dim: int) -> None:
+    """Delete an existing collection before creating a fresh one for rebuilds."""
+    if name in _collection_names(client):
+        client.delete_collection(collection_name=name)
+    _create_collection(client, name, dim)
+
+
 def create_qdrant_db(chunks, collection_name: str | None = None):
-    """Tạo (hoặc bổ sung) collection Qdrant từ chunks và trả về vector store."""
+    """
+    Rebuild a Qdrant collection from chunks and return the vector store.
+    
+    Args:
+        chunks (list): A list of document chunks to be indexed.
+        collection_name (str, optional): The name of the Qdrant collection to rebuild. Defaults to None, which will use the collection name specified in settings.
+        
+    Returns:
+        QdrantVectorStore: The initialized vector store connected to the rebuilt collection.
+    """
     if not chunks:
         raise ValueError("Cannot create Qdrant collection from empty chunks.")
 
     name = collection_name or settings.qdrant_collection
     client = _get_client()
-    _ensure_collection(client, name, _embedding_dim())
+    _recreate_collection(client, name, _embedding_dim())
 
     store = QdrantVectorStore(
         client=client,
@@ -60,17 +81,16 @@ def create_qdrant_db(chunks, collection_name: str | None = None):
         print(f"  batch {i} -> {i + len(batch)}")
         store.add_documents(batch)
 
-    print(f"Done. Collection '{name}' updated on Qdrant Cloud.")
+    print(f"Done. Collection '{name}' rebuilt on Qdrant Cloud.")
     return store
 
 
 def load_qdrant_db(collection_name: str | None = None):
-    """Mở vector store Qdrant cho một collection đã tồn tại."""
+    """Load the Qdrant vector store for an existing collection."""
     name = collection_name or settings.qdrant_collection
     client = _get_client()
 
-    existing = {c.name for c in client.get_collections().collections}
-    if name not in existing:
+    if name not in _collection_names(client):
         raise ValueError(f"Qdrant collection '{name}' not found.")
 
     return QdrantVectorStore(
@@ -81,6 +101,6 @@ def load_qdrant_db(collection_name: str | None = None):
 
 
 def count_qdrant_vectors(db) -> int:
-    """Đếm số điểm (vector) hiện có trong collection."""
+    """Count the number of points (vectors) currently stored in the collection."""
     info = db.client.get_collection(db.collection_name)
     return info.points_count or 0

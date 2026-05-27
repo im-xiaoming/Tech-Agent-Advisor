@@ -1,14 +1,19 @@
-"""Load dữ liệu CSV từ thư mục local thành LangChain Document."""
-
 from pathlib import Path
-
 from langchain_community.document_loaders import CSVLoader, DirectoryLoader
-
 from rag_engine.core.config import settings
 
 
 def load_data(directory_path=None):
-    """Đọc toàn bộ file CSV trong thư mục dữ liệu và trả về Document list."""
+    """
+    Load all CSV files in the data directory and return a list of Document objects.
+    
+    Args:
+        directory_path (str, optional): Path to the directory containing CSV files.
+            If None, defaults to settings.data_dir.
+    
+    Returns:
+        List[Document]: A list of Document objects loaded from the CSV files.
+    """
     data_path = Path(directory_path or settings.data_dir).resolve()
 
     loader = DirectoryLoader(

@@ -342,8 +342,12 @@ function createMessageHTML(message) {
 
 // Format message content (basic markdown)
 function formatMessageContent(content) {
+    return `<p>${formatMessageBody(content)}</p>`;
+}
+
+function formatMessageBody(content) {
     // Escape HTML first
-    let formatted = escapeHtml(content);
+    let formatted = escapeHtml(content || '');
     
     // Code blocks
     formatted = formatted.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
@@ -351,16 +355,19 @@ function formatMessageContent(content) {
     // Inline code
     formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
     
+    // Bold italic
+    formatted = formatted.replace(/\*\*\*([\s\S]+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+
     // Bold
-    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
     
     // Italic
-    formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    formatted = formatted.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
     
     // Line breaks
     formatted = formatted.replace(/\n/g, '<br>');
     
-    return `<p>${formatted}</p>`;
+    return formatted;
 }
 
 // Escape HTML
@@ -475,7 +482,7 @@ async function getBotResponse(userMessage) {
         const target = ensurePlaceholder();
         const contentEl = target.querySelector('.message-content p')
             || target.querySelector('.message-content');
-        if (contentEl) contentEl.textContent = text;
+        if (contentEl) contentEl.innerHTML = formatMessageBody(text);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     };
 

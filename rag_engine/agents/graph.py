@@ -1,5 +1,3 @@
-"""Xây dựng workflow LangGraph cho chatbot RAG nhiều agent."""
-
 from langgraph.graph import END, StateGraph
 
 from rag_engine.agents.advisor.agent import advisor_agent, smalltalk_agent
@@ -14,7 +12,7 @@ from rag_engine.core.config import settings
 
 
 def _route_after_supervisor(state: AgentState) -> str:
-    """Chọn bước tiếp theo sau supervisor dựa trên route trong state."""
+    """Choose next step after supervisor based on route in state."""
     route = state.get("route")
     if route == "product_advice":
         return "retrieval"
@@ -24,12 +22,21 @@ def _route_after_supervisor(state: AgentState) -> str:
 
 
 def _route_after_retrieval(state: AgentState) -> str:
-    """Chuyển sang advisor khi có tài liệu, hoặc guardrail khi thiếu context."""
+    """Choose next step after retrieval based on retrieved documents."""
     return "advisor" if state.get("retrieved_docs") else "no_context_guardrails"
 
 
 def build_chat_graph(db, top_k: int | None = None):
-    """Tạo graph hội thoại gồm supervisor, retrieval, advisor và guardrails."""
+    """
+    Build the chat graph including supervisor, retrieval, advisor and guardrails.
+    
+    Args:
+        db: VectorStore instance for retrieval agent.
+        top_k: Optional default top_k for retrieval agent, overrides config if provided.
+        
+    Returns:
+        Compiled StateGraph instance representing the multi-agent workflow.
+    """
     workflow = StateGraph(AgentState)
 
     workflow.add_node("supervisor", supervisor_agent)

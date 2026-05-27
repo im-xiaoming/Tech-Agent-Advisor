@@ -1,0 +1,4 @@
+Câu của người dùng:
+{query}
+
+Trả lời:

@@ -1,0 +1,5 @@
+chunking:
+  chunk_size: 800
+  chunk_overlap: 100
+retriever:
+  score_threshold: 0.5

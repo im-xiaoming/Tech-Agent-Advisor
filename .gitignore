@@ -20,9 +20,9 @@ dist/
 *.swo
 
 # --- Project Specific (RAG) ---
-# Thư mục chứa các vector đã được build (thường rất nặng)
-faiss_index/
-storage/faiss_index/
+# Local generated vector stores, if any
+vector_store/
+storage/vector_store/
 db.sqlite3
 
 # Các file dữ liệu thô (Nếu bạn không muốn công khai dữ liệu khách hàng/sản phẩm)
@@ -33,3 +33,5 @@ db.sqlite3
 *.log
 tmp/
 .DS_Store
+.ipynb_checkpoints/
+*.ipynb
