@@ -1,20 +1,12 @@
 """Supervisor agent: classify intent and decide route for the graph."""
 
+from unittest import result
+
 from rag_engine.agents.state import AgentState
-from transformers import pipeline
-from functools import lru_cache
 import os
 import torch
-from rag_engine.core.llm import rewrite_query_for_retrieval
+from rag_engine.core.llm import rewrite_query_for_retrieval, classify_intent
 
-
-@lru_cache(maxsize=1)
-def get_classifier():
-    return pipeline(
-        "zero-shot-classification",
-        model=os.getenv("CLASSIFICATION_MODEL", "joeddav/xlm-roberta-large-xnli"),
-        device='cuda' if torch.cuda.is_available() else 'cpu'
-    )
 
 
 def supervisor_agent(state: AgentState) -> AgentState:
@@ -27,15 +19,10 @@ def supervisor_agent(state: AgentState) -> AgentState:
             "error": "Query is empty.",
             "answer": "Vui lòng nhập câu hỏi về sản phẩm cần tư vấn.",
         }
-        
-    classifier = get_classifier()
-    result = classifier(
-        query,
-        candidate_labels=["smalltalk", "product_advice", "invalid"],
-        hypothesis_template="Câu này thuộc nhóm {}.",
-    )
     
-    if result["labels"][0] == "invalid":
+    intent = classify_intent(query, history=state.get("history", ""))
+    
+    if intent == "invalid":
         return {
             **state,
             "query": query,
@@ -45,7 +32,7 @@ def supervisor_agent(state: AgentState) -> AgentState:
         }
 
     
-    if result["labels"][0] == "smalltalk":
+    if intent == "smalltalk":
         return {**state, "query": query, "route": "smalltalk"}
     
     

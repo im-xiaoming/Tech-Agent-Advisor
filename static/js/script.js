@@ -368,9 +368,10 @@ function formatMessageBody(content) {
 }
 
 function formatMarkdownBlocks(content) {
-    const lines = content.split('\n');
+    const lines = normalizeMarkdownTables(content).split('\n');
     const output = [];
     let openList = null;
+    let tableRows = [];
 
     const closeList = () => {
         if (!openList) return;
@@ -378,13 +379,48 @@ function formatMarkdownBlocks(content) {
         openList = null;
     };
 
+    const flushTable = () => {
+        if (!tableRows.length) return;
+
+        closeList();
+        if (tableRows.length < 2) {
+            tableRows.forEach(row => output.push(`<p>${row}</p>`));
+            tableRows = [];
+            return;
+        }
+
+        const rows = tableRows.map(parseTableCells);
+        const header = rows[0];
+        const bodyRows = rows.slice(isTableSeparator(rows[1]) ? 2 : 1)
+            .filter(row => !isTableSeparator(row));
+
+        output.push('<div class="message-table-wrap"><table><thead><tr>');
+        header.forEach(cell => output.push(`<th>${cell}</th>`));
+        output.push('</tr></thead><tbody>');
+        bodyRows.forEach(row => {
+            output.push('<tr>');
+            header.forEach((_, index) => output.push(`<td>${row[index] || ''}</td>`));
+            output.push('</tr>');
+        });
+        output.push('</tbody></table></div>');
+        tableRows = [];
+    };
+
     lines.forEach(line => {
         const trimmed = line.trim();
 
         if (!trimmed) {
+            flushTable();
             closeList();
             return;
         }
+
+        if (isTableRow(trimmed)) {
+            tableRows.push(trimmed);
+            return;
+        }
+
+        flushTable();
 
         const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
         if (heading) {
@@ -420,8 +456,29 @@ function formatMarkdownBlocks(content) {
         output.push(`<p>${trimmed}</p>`);
     });
 
+    flushTable();
     closeList();
     return output.join('');
+}
+
+function normalizeMarkdownTables(content) {
+    return content.replace(/(\|[^\n]*\|)\n\s*\n(?=\s*\|)/g, '$1\n');
+}
+
+function isTableRow(line) {
+    return line.startsWith('|') && line.endsWith('|') && line.split('|').length > 2;
+}
+
+function parseTableCells(line) {
+    return line
+        .replace(/^\|/, '')
+        .replace(/\|$/, '')
+        .split('|')
+        .map(cell => cell.trim());
+}
+
+function isTableSeparator(row) {
+    return row.length > 0 && row.every(cell => /^:?-{3,}:?$/.test(cell.trim()));
 }
 
 // Escape HTML

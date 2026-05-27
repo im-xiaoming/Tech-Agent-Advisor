@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 
 from chat.services import stream_chat
 from rag_engine.core.config import settings
-from . import summarize
+from rag_engine.core.llm import summarize_history
 
 
 def _build_history_context(histories) -> str:
@@ -24,13 +24,13 @@ def _build_history_context(histories) -> str:
         return ""
 
     recent_count = max(int(settings.num_chats_retained), 0)
-    old_messages = messages[:-recent_count] if recent_count else messages
-    recent_messages = messages[-recent_count:] if recent_count else []
+    old_messages = messages[:-recent_count*2] if recent_count else messages
+    recent_messages = messages[-recent_count*2:] if recent_count else []
 
     parts = []
     if old_messages:
         old_history = "\n".join(old_messages)
-        summary = summarize.summarize_history(old_history)
+        summary = summarize_history(old_history)
         if summary:
             parts.append(f"Tóm tắt hội thoại trước đó:\n{summary}")
 

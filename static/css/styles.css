@@ -544,6 +544,45 @@ body {
     line-height: 1.6;
 }
 
+.message-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    margin: 12px 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.message-markdown table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.message-markdown th,
+.message-markdown td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    text-align: left;
+    vertical-align: top;
+}
+
+.message-markdown th:last-child,
+.message-markdown td:last-child {
+    border-right: 0;
+}
+
+.message-markdown tr:last-child td {
+    border-bottom: 0;
+}
+
+.message-markdown th {
+    background-color: var(--bg-secondary);
+    font-weight: 700;
+}
+
 .message-content code {
     background-color: var(--bg-tertiary);
     padding: 2px 6px;
