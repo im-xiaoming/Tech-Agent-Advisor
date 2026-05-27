@@ -1,3 +1,8 @@
+Lịch sử hội thoại:
+{history}
+
+Chỉ dùng lịch sử để hiểu ngữ cảnh. Không lặp lại nguyên văn lịch sử, không in các nhãn User/Assistant, và không tự hỏi lại câu hỏi trong lịch sử.
+
 CONTEXT:
 {context}
 

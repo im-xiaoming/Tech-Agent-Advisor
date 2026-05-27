@@ -3,13 +3,16 @@
 from rag_engine.agents.state import AgentState
 from transformers import pipeline
 from functools import lru_cache
+import os
+import torch
 
 
 @lru_cache(maxsize=1)
 def get_classifier():
     return pipeline(
         "zero-shot-classification",
-        model="joeddav/xlm-roberta-large-xnli"
+        model=os.getenv("CLASSIFICATION_MODEL", "joeddav/xlm-roberta-large-xnli"),
+        device='cuda' if torch.cuda.is_available() else 'cpu'
     )
 
 

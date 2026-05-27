@@ -6,6 +6,7 @@ from langchain_core.documents import Document
 
 class AgentState(TypedDict):
     query: str
+    history: NotRequired[str]
     route: NotRequired[Literal["product_advice", "smalltalk", "invalid"]]
     retrieved_docs: NotRequired[list[Document]]
     context: NotRequired[str]

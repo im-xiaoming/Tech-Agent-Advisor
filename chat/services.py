@@ -10,7 +10,7 @@ def _sse(event: dict) -> str:
     return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
 
-def stream_chat(query: str):
+def stream_chat(query: str, history: str = ""):
     """Yield SSE events for one chat request.
 
     The RAG engine owns classification, retrieval, prompting, generation, and
@@ -18,7 +18,7 @@ def stream_chat(query: str):
     response format expected by the view/frontend.
     """
     try:
-        result = ask(query)
+        result = ask(query, history=history)
     except Exception as exc:
         yield _sse({"error": str(exc)})
         yield _sse({"done": True, "sources": []})

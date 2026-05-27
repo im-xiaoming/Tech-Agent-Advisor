@@ -6,14 +6,6 @@ from django.conf import settings
 
 BASE_DIR = settings.BASE_DIR
 
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    load_dotenv = None
-
-if load_dotenv:
-    load_dotenv(BASE_DIR / ".env")
-
 
 with open(BASE_DIR / ".config" / "config.yaml", "r", encoding="utf-8") as f:
     config = yaml.safe_load(f)
@@ -40,6 +32,11 @@ class Settings:
     chunk_size: int = config["chunking"]["chunk_size"]
     chunk_overlap: int = config["chunking"]["chunk_overlap"]
     score_threshold: float = config["retriever"]["score_threshold"]
+    
+    # chat history settings from config.yaml
+    num_chats_retained: int = config["chat_history"]["num_chats_retained"]
+    max_length: int = config["chat_history"]["max_length"]
+    beam_size: int = config["chat_history"]["beam_size"]
 
 
 settings = Settings()

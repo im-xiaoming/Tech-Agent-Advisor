@@ -20,13 +20,14 @@ def get_default_graph():
     return build_chat_graph(vector_db, top_k=settings.rag_top_k)
 
 
-def ask(query: str, db=None, temperature: float | None = None, top_k: int | None = None) -> dict:
+def ask(query: str, history: str, db=None, temperature: float | None = None, top_k: int | None = None) -> dict:
     vector_db = db or get_default_db()
     graph = get_default_graph()
     
     result = graph.invoke(
         {
             "query": query,
+            "history": history,
             "temperature": temperature if temperature is not None else settings.rag_temperature,
             "top_k": top_k or settings.rag_top_k,
         }
@@ -38,5 +39,5 @@ def ask(query: str, db=None, temperature: float | None = None, top_k: int | None
     }
 
 
-def ask_rag(db, query, creative_level=0.1):
-    return ask(query, db=db, temperature=creative_level)["answer"]
+# def ask_rag(db, history, query, creative_level=0.1):
+#     return ask(query, history=history, db=db, temperature=creative_level)["answer"]

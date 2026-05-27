@@ -377,6 +377,19 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function buildRequestHistory(limit = 30) {
+    const chat = chats.find(c => c.id === currentChatId);
+    if (!chat || !Array.isArray(chat.messages)) return [];
+
+    return chat.messages
+        .slice(0, -1)
+        .slice(-limit)
+        .map(message => {
+            const speaker = message.role === 'user' ? 'Người dùng' : 'Trợ lý';
+            return `${message.role === 'user' ? 'User' : 'Assistant'}: ${message.content || ''}`;
+        });
+}
+
 // Send message
 function sendMessage() {
     const content = messageInput.value.trim();
@@ -487,10 +500,14 @@ async function getBotResponse(userMessage) {
     };
 
     try {
+        const history = buildRequestHistory();
         const response = await fetch(chatApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: userMessage }),
+            body: JSON.stringify({
+                query: userMessage,
+                history,
+            }),
         });
 
         if (!response.ok || !response.body) {

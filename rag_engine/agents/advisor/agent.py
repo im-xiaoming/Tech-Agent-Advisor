@@ -10,6 +10,7 @@ def advisor_agent(state: AgentState) -> AgentState:
     user_prompt = user_prompt.format(
         context=state.get("context", ""),
         query=state["query"],
+        history=state.get("history", ""),
     )
 
     answer = generate_response(system_prompt, user_prompt, temperature=float(state.get("temperature", 0.1)))
@@ -22,6 +23,7 @@ def smalltalk_agent(state: AgentState) -> AgentState:
     system_prompt, user_prompt = load_smalltalk_prompt()
     user_prompt = user_prompt.format(
         query=state["query"],
+        history=state.get("history", ""),
     )
     answer = generate_response(system_prompt, user_prompt, temperature=float(state.get("temperature", 0.5)))
     return {**state, "answer": answer, "sources": []}
