@@ -18,6 +18,9 @@ class Settings:
     storage_dir: Path = BASE_DIR / "storage"
     prompt_path: Path = BASE_DIR / "prompts"
     embedding_model: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
+    
+    # Splitter
+    splitter_method: str = config["splitter"]["method"]
 
     # LLM MODEL
     llm_provider: str = os.getenv("LLM_PROVIDER", "ollama").lower()

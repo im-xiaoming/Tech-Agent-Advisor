@@ -1,10 +1,6 @@
 """Supervisor agent: classify intent and decide route for the graph."""
 
-from unittest import result
-
 from rag_engine.agents.state import AgentState
-import os
-import torch
 from rag_engine.core.llm import rewrite_query_for_retrieval, classify_intent
 
 
@@ -22,7 +18,7 @@ def supervisor_agent(state: AgentState) -> AgentState:
     
     intent = classify_intent(query, history=state.get("history", ""))
     
-    if intent == "invalid":
+    if "invalid" in intent.lower():
         return {
             **state,
             "query": query,
@@ -32,7 +28,7 @@ def supervisor_agent(state: AgentState) -> AgentState:
         }
 
     
-    if intent == "smalltalk":
+    if "smalltalk" in intent.lower():
         return {**state, "query": query, "route": "smalltalk"}
     
     

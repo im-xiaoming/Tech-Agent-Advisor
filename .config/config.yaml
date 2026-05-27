@@ -1,5 +1,5 @@
 chunking:
-  chunk_size: 800
+  chunk_size: 1000
   chunk_overlap: 100
 retriever:
   score_threshold: 0.5
@@ -7,3 +7,5 @@ chat_history:
   num_chats_retained: 5
   max_length: 2048
   beam_size: 15
+splitter:
+  method: tiktoken # Options: recursive_character, tiktoken, sentence_transformer

@@ -348,6 +348,7 @@ function formatMessageContent(content) {
 function formatMessageBody(content) {
     // Escape HTML first
     let formatted = escapeHtml(content || '');
+    formatted = formatted.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
     
     // Code blocks
     formatted = formatted.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
@@ -466,15 +467,27 @@ function normalizeMarkdownTables(content) {
 }
 
 function isTableRow(line) {
-    return line.startsWith('|') && line.endsWith('|') && line.split('|').length > 2;
+    return isPipeTableRow(line) || isTabTableRow(line);
 }
 
 function parseTableCells(line) {
+    if (isTabTableRow(line)) {
+        return line.split('\t').map(cell => cell.trim());
+    }
+
     return line
         .replace(/^\|/, '')
         .replace(/\|$/, '')
         .split('|')
         .map(cell => cell.trim());
+}
+
+function isPipeTableRow(line) {
+    return line.startsWith('|') && line.endsWith('|') && line.split('|').length > 2;
+}
+
+function isTabTableRow(line) {
+    return line.includes('\t') && line.split('\t').filter(cell => cell.trim()).length > 1;
 }
 
 function isTableSeparator(row) {
