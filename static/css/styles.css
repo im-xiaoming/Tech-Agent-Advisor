@@ -510,6 +510,40 @@ body {
     margin-bottom: 0;
 }
 
+.message-markdown h2,
+.message-markdown h3,
+.message-markdown h4 {
+    margin: 14px 0 8px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.message-markdown h2:first-child,
+.message-markdown h3:first-child,
+.message-markdown h4:first-child {
+    margin-top: 0;
+}
+
+.message-markdown h2 {
+    font-size: 18px;
+}
+
+.message-markdown h3,
+.message-markdown h4 {
+    font-size: 16px;
+}
+
+.message-markdown ul,
+.message-markdown ol {
+    margin: 8px 0 12px 22px;
+    padding: 0;
+}
+
+.message-markdown li {
+    margin: 4px 0;
+    line-height: 1.6;
+}
+
 .message-content code {
     background-color: var(--bg-tertiary);
     padding: 2px 6px;

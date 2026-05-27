@@ -25,5 +25,5 @@ def smalltalk_agent(state: AgentState) -> AgentState:
         query=state["query"],
         history=state.get("history", ""),
     )
-    answer = generate_response(system_prompt, user_prompt, temperature=float(state.get("temperature", 0.5)))
+    answer = generate_response(system_prompt, user_prompt, temperature=float(state.get("temperature", 0.7)))
     return {**state, "answer": answer, "sources": []}

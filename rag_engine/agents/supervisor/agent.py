@@ -5,6 +5,7 @@ from transformers import pipeline
 from functools import lru_cache
 import os
 import torch
+from rag_engine.core.llm import rewrite_query_for_retrieval
 
 
 @lru_cache(maxsize=1)
@@ -33,12 +34,8 @@ def supervisor_agent(state: AgentState) -> AgentState:
         candidate_labels=["smalltalk", "product_advice", "invalid"],
         hypothesis_template="Câu này thuộc nhóm {}.",
     )
-
-    if result["labels"][0] == "smalltalk":
-        return {**state, "query": query, "route": "smalltalk"}
-    elif result["labels"][0] == "product_advice":
-        return {**state, "query": query, "route": "product_advice"}
-    else:
+    
+    if result["labels"][0] == "invalid":
         return {
             **state,
             "query": query,
@@ -46,3 +43,13 @@ def supervisor_agent(state: AgentState) -> AgentState:
             "error": "Unable to classify intent.",
             "answer": "Xin lỗi, tôi không hiểu câu hỏi của bạn. Vui lòng hỏi về sản phẩm hoặc trò chuyện nhé.",
         }
+
+    
+    if result["labels"][0] == "smalltalk":
+        return {**state, "query": query, "route": "smalltalk"}
+    
+    
+    # For product advice, rewrite the query for better retrieval performance
+    query = rewrite_query_for_retrieval(query)
+    
+    return {**state, "query": query, "route": "product_advice"}

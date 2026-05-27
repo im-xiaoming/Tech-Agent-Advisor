@@ -44,3 +44,24 @@ def generate_response(system_prompt: str, user_prompt: str, temperature: float) 
     """
     # provider = (settings.llm_provider or "ollama").lower()
     return _generate_ollama(system_prompt, user_prompt, temperature)
+
+
+def rewrite_query_for_retrieval(query: str, history: str = "") -> str:
+    """
+    Rewrite the user query to be more effective for retrieval.
+    
+    Args:
+        query: The original user query.
+    
+    Returns:
+        The rewritten query optimized for retrieval.
+    """
+    
+    system_prompt = f"""
+    Lịch sử trò chuyện:
+    {history}
+    
+    SYSTEM PROMPT:
+    Dựa vào lịch sử trò chuyện và câu hỏi của người dùng, hãy viết lại câu hỏi theo cách rõ ràng, dễ hiểu hơn, để {settings.ollama_model} có thể hiểu được nhưng vẫn giữ nguyên ý nghĩa. Câu hỏi sẽ được sử dụng để tìm kiếm tài liệu liên quan trong cơ sở dữ liệu, vì vậy hãy đảm bảo rằng nó chứa các từ khóa quan trọng và được diễn đạt một cách chính xác.
+    """
+    return generate_response(system_prompt, query, temperature=0.1)

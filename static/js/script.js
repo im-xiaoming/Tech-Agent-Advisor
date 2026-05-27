@@ -342,7 +342,7 @@ function createMessageHTML(message) {
 
 // Format message content (basic markdown)
 function formatMessageContent(content) {
-    return `<p>${formatMessageBody(content)}</p>`;
+    return `<div class="message-markdown">${formatMessageBody(content)}</div>`;
 }
 
 function formatMessageBody(content) {
@@ -364,10 +364,64 @@ function formatMessageBody(content) {
     // Italic
     formatted = formatted.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
     
-    // Line breaks
-    formatted = formatted.replace(/\n/g, '<br>');
-    
-    return formatted;
+    return formatMarkdownBlocks(formatted);
+}
+
+function formatMarkdownBlocks(content) {
+    const lines = content.split('\n');
+    const output = [];
+    let openList = null;
+
+    const closeList = () => {
+        if (!openList) return;
+        output.push(`</${openList}>`);
+        openList = null;
+    };
+
+    lines.forEach(line => {
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+            closeList();
+            return;
+        }
+
+        const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
+        if (heading) {
+            closeList();
+            const level = Math.min(heading[1].length + 1, 4);
+            output.push(`<h${level}>${heading[2]}</h${level}>`);
+            return;
+        }
+
+        const bullet = trimmed.match(/^[-*]\s+(.+)$/);
+        if (bullet) {
+            if (openList !== 'ul') {
+                closeList();
+                output.push('<ul>');
+                openList = 'ul';
+            }
+            output.push(`<li>${bullet[1]}</li>`);
+            return;
+        }
+
+        const numbered = trimmed.match(/^\d+\.\s+(.+)$/);
+        if (numbered) {
+            if (openList !== 'ol') {
+                closeList();
+                output.push('<ol>');
+                openList = 'ol';
+            }
+            output.push(`<li>${numbered[1]}</li>`);
+            return;
+        }
+
+        closeList();
+        output.push(`<p>${trimmed}</p>`);
+    });
+
+    closeList();
+    return output.join('');
 }
 
 // Escape HTML
@@ -493,7 +547,8 @@ async function getBotResponse(userMessage) {
 
     const renderInto = (text) => {
         const target = ensurePlaceholder();
-        const contentEl = target.querySelector('.message-content p')
+        const contentEl = target.querySelector('.message-markdown')
+            || target.querySelector('.message-content p')
             || target.querySelector('.message-content');
         if (contentEl) contentEl.innerHTML = formatMessageBody(text);
         chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -602,7 +657,10 @@ function extractBotContent(data) {
 
 // Copy message
 function copyMessage(btn) {
-    const content = btn.closest('.message-content').querySelector('p').textContent;
+    const messageContent = btn.closest('.message-content');
+    const contentEl = messageContent.querySelector('.message-markdown')
+        || messageContent.querySelector('p');
+    const content = contentEl ? contentEl.innerText : '';
     navigator.clipboard.writeText(content).then(() => {
         showToast('Copied to clipboard', 'success');
     });
