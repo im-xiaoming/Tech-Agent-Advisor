@@ -1,0 +1,5 @@
+outs:
+- md5: 4bbdccc414055cc011ccde2f9931089f
+  size: 5879
+  hash: md5
+  path: soc_ratings.csv

@@ -26,8 +26,9 @@ storage/vector_store/
 db.sqlite3
 
 # Các file dữ liệu thô (Nếu bạn không muốn công khai dữ liệu khách hàng/sản phẩm)
-# data/*.csv
-# data/*.pdf
+data/*.csv
+data/*.pdf
+!data/*.dvc
 
 # --- Logs & Temp ---
 *.log
@@ -35,4 +36,3 @@ tmp/
 .DS_Store
 .ipynb_checkpoints/
 *.ipynb
-/data
