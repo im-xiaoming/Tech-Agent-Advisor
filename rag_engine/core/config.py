@@ -17,7 +17,11 @@ class Settings:
     data_dir: Path = BASE_DIR / "data"
     storage_dir: Path = BASE_DIR / "storage"
     prompt_path: Path = BASE_DIR / "prompts"
-    embedding_model: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
+    
+    # embedding
+    embedding_provider: str = config['embedding']['embedding_provider']
+    embedding_model: str = config['embedding']['embedding_model']
+    embedding_dimension: int = config['embedding']['dimension']
     
     # Splitter
     splitter_method: str = config["splitter"]["method"]

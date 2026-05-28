@@ -9,3 +9,7 @@ chat_history:
   beam_size: 15
 splitter:
   method: sentence_transformer # Options: recursive_character, tiktoken, sentence_transformer
+embedding:
+  embedding_provider: ollama
+  embedding_model: qwen3-embedding
+  dimension: 4096

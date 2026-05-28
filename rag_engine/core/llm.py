@@ -1,36 +1,59 @@
-from google.genai import types
 from rag_engine.core.config import settings
-from ollama import chat
-from google import genai
+from langchain_ollama import ChatOllama
+from functools import lru_cache
+import os
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 
-def _generate_ollama(system_prompt: str, user_prompt: str, temperature: float) -> str:
+@lru_cache(maxsize=1)
+def _get_llm_model(temperature: float, reasoning: bool = False):
+    """Get the active LLM model based on configuration."""
+    
+    if settings.llm_provider == "gemini" and "GOOGLE_API_KEY" in os.environ:
+        print(f"Using Gemini model: {settings.llm_model}")
+        model = ChatGoogleGenerativeAI(
+            model=settings.llm_model,
+            temperature=temperature,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            thinking_level='medium' if reasoning else 'low',
+        )
+        return model
+    else:
+        print(f"Using Ollama model: {settings.llm_model}")
+        model = ChatOllama(
+            model=settings.llm_model,
+            temperature=temperature,
+            reasoning=reasoning
+        )
+        return model
+
+
+
+def _generate_ollama(system_prompt: str, user_prompt: str, temperature: float, reasoning: bool = False) -> str:
     """
     Call local Ollama server and return the generated text.
     
     Args:
-        system_prompt: The system prompt to send to the LLM.
-        user_prompt: The user prompt to send to the LLM.
-        temperature: The sampling temperature for generation.
+        system_prompt (str): The system prompt to send to the LLM.
+        user_prompt (str): The user prompt to send to the LLM.
+        temperature (float): The sampling temperature for generation.
+        reasoning (Optional[bool]): Activate model's reasoning mode.
     
     Returns:
         The generated response text from the LLM.
     """
+    llm = _get_llm_model(temperature, reasoning=reasoning)
+    
+    messages = [
+        ('system', system_prompt),
+        ('user', user_prompt)
+    ]
+    response = llm.invoke(messages)
+    return response.content.strip()
 
-    response = chat(
-        model=settings.llm_model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        stream=False,
-        think=False,
-        options={
-            "temperature": temperature,
-        }
-    )
-    return response.message.content.strip()
 
 
 def _generate_gemini(system_prompt: str, user_prompt: str, temperature: float) -> str:
@@ -50,29 +73,17 @@ def _generate_gemini(system_prompt: str, user_prompt: str, temperature: float) -
             "GEMINI_API_KEY or GOOGLE_API_KEY is required when LLM_PROVIDER=gemini."
         )
 
-    client = genai.Client(api_key=settings.gemini_api_key)
-    response = client.models.generate_content(
-        model=settings.llm_model,
-        contents=user_prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            temperature=temperature,
-        ),
-    )
-    return (response.text or "").strip()
+    llm = _get_llm_model(temperature, reasoning=False)
+    messages = [
+        ("system", system_prompt),
+        ("user", user_prompt)
+    ]
+    response = llm.invoke(messages)
+    return response.content.strip()
 
 
 
-
-def _active_model_name() -> str:
-    """Get the active LLM generator based on the configuration."""
-    if settings.llm_provider == "gemini":
-        return _generate_gemini
-    return _generate_ollama
-
-
-
-def generate_response(system_prompt: str, user_prompt: str, temperature: float) -> str:
+def generate_response(system_prompt: str, user_prompt: str, temperature: float, reasoning: bool = False) -> str:
     """
     Call the active LLM and return the generated text.
 
@@ -84,8 +95,10 @@ def generate_response(system_prompt: str, user_prompt: str, temperature: float) 
     Returns:
         The generated response text from the LLM.
     """
-    llm = _active_model_name()
-    return llm(system_prompt, user_prompt, temperature)
+    if settings.llm_provider == 'gemini':
+        return _generate_gemini(system_prompt, user_prompt, temperature, reasoning)
+    else:
+        return _generate_ollama(system_prompt, user_prompt, temperature, reasoning)
 
 
 def rewrite_query_for_retrieval(query: str, history: str = "") -> str:
@@ -107,8 +120,7 @@ def rewrite_query_for_retrieval(query: str, history: str = "") -> str:
     Dựa vào lịch sử trò chuyện và câu hỏi của người dùng, hãy viết lại câu hỏi theo cách rõ ràng, dễ hiểu hơn, để {settings.llm_model} có thể hiểu được nhưng vẫn giữ nguyên ý nghĩa. Câu hỏi sẽ được sử dụng để tìm kiếm tài liệu liên quan trong cơ sở dữ liệu, vì vậy hãy đảm bảo rằng nó chứa các từ khóa quan trọng và được diễn đạt một cách chính xác.
     """
     
-    llm = _active_model_name()
-    return llm(system_prompt, query, temperature=0.1)
+    return generate_response(system_prompt, query, temperature=0.1)
 
 
 def classify_intent(query: str, history: str = "") -> str:
@@ -131,17 +143,17 @@ def classify_intent(query: str, history: str = "") -> str:
     Dựa vào lịch sử trò chuyện và câu hỏi của người dùng, hãy phân loại câu hỏi này vào một trong các danh mục sau: "smalltalk", "product_advice", "invalid".
     """
     
-    llm = _active_model_name()
-    return llm(system_prompt, query, temperature=0.1)
+    return generate_response(system_prompt, query, temperature=0.1)
 
 
 
-def summarize_history(history: str) -> str:
+def summarize_history(history: str, reasoning: bool = True) -> str:
     """
     Summarize the conversation history to make it more concise and user-friendly.
     
     Args:
         history (str): The conversation history to summarize.
+        reasoning (Optional[Bool]): Activate model's reasoning mode.
     
     Returns:
         A summarized version of the history.
@@ -154,5 +166,5 @@ def summarize_history(history: str) -> str:
     SYSTEM PROMPT:
     Hãy tóm tắt đoạn lịch sử trò chuyện sau đây một cách ngắn gọn và dễ hiểu hơn, đồng thời giữ nguyên ý nghĩa chính của nó:
     """
-    llm = _active_model_name()
-    return llm(system_prompt, history, temperature=0.1)
+    
+    return generate_response(system_prompt, history, temperature=0.1, reasoning=reasoning)
