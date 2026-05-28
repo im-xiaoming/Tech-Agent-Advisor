@@ -18,6 +18,9 @@ class Settings:
     storage_dir: Path = BASE_DIR / "storage"
     prompt_path: Path = BASE_DIR / "prompts"
     
+    # loader
+    loader_type: str = config['loader']['type']
+    
     # embedding
     embedding_provider: str = config['embedding']['embedding_provider']
     embedding_model: str = config['embedding']['embedding_model']

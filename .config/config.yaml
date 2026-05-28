@@ -13,3 +13,5 @@ embedding:
   embedding_provider: ollama
   embedding_model: qwen3-embedding
   dimension: 4096
+loader:
+  type: jsonl
