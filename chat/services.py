@@ -3,8 +3,6 @@
 import json
 import logging
 
-from rag_engine.rag.pipeline import ask
-
 logger = logging.getLogger(__name__)
 
 
@@ -21,6 +19,8 @@ def stream_chat(query: str, history: str = ""):
     response format expected by the view/frontend.
     """
     try:
+        from rag_engine.rag.pipeline import ask
+
         result = ask(query, history=history)
     except Exception as exc:
         logger.exception("Chat request failed.")

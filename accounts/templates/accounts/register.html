@@ -1,0 +1,43 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Tech ChatBot</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/auth.css' %}">
+</head>
+<body>
+    <main class="auth-page">
+        <section class="auth-panel">
+            <a class="auth-back" href="{% url 'landing' %}">Về trang chủ</a>
+            <h1>Tạo tài khoản</h1>
+            <p>Lịch sử chat sẽ được lưu theo tài khoản này.</p>
+
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <label for="{{ form.username.id_for_label }}">Tên đăng nhập</label>
+                {{ form.username }}
+                {{ form.username.errors }}
+
+                <label for="{{ form.password1.id_for_label }}">Mật khẩu</label>
+                {{ form.password1 }}
+                {{ form.password1.errors }}
+
+                <label for="{{ form.password2.id_for_label }}">Nhập lại mật khẩu</label>
+                {{ form.password2 }}
+                {{ form.password2.errors }}
+
+                <button type="submit">Tạo và vào chatbot</button>
+            </form>
+
+            <p class="auth-switch">
+                Đã có tài khoản?
+                <a href="{% url 'login' %}">Đăng nhập</a>
+            </p>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,135 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config Manager</title>
+    <link rel="stylesheet" href="{% static 'manager/css/manager.css' %}">
+</head>
+<body>
+    <main class="manager-page">
+        <header class="manager-header">
+            <div>
+                <p class="eyebrow">Admin manager</p>
+                <h1>Quản lý cấu hình RAG</h1>
+                <p class="path">{{ config_path }}</p>
+            </div>
+            <nav class="manager-actions">
+                <a href="{% url 'admin:index' %}">Django admin</a>
+                <a href="{% url 'chat-view' %}">Chatbot</a>
+            </nav>
+        </header>
+
+        {% if messages %}
+            <div class="message-list">
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" class="config-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <section class="config-section">
+                <h2>Chunking</h2>
+                <div class="field-grid">
+                    <label>
+                        <span>{{ form.chunk_size.label }}</span>
+                        {{ form.chunk_size }}
+                        {{ form.chunk_size.errors }}
+                    </label>
+                    <label>
+                        <span>{{ form.chunk_overlap.label }}</span>
+                        {{ form.chunk_overlap }}
+                        {{ form.chunk_overlap.errors }}
+                    </label>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <h2>Retriever</h2>
+                <div class="field-grid">
+                    <label>
+                        <span>{{ form.score_threshold.label }}</span>
+                        {{ form.score_threshold }}
+                        {{ form.score_threshold.errors }}
+                    </label>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <h2>Chat history</h2>
+                <div class="field-grid">
+                    <label>
+                        <span>{{ form.num_chats_retained.label }}</span>
+                        {{ form.num_chats_retained }}
+                        {{ form.num_chats_retained.errors }}
+                    </label>
+                    <label>
+                        <span>{{ form.max_length.label }}</span>
+                        {{ form.max_length }}
+                        {{ form.max_length.errors }}
+                    </label>
+                    <label>
+                        <span>{{ form.beam_size.label }}</span>
+                        {{ form.beam_size }}
+                        {{ form.beam_size.errors }}
+                    </label>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <h2>Pipeline</h2>
+                <div class="field-grid">
+                    <label>
+                        <span>{{ form.splitter_method.label }}</span>
+                        {{ form.splitter_method }}
+                        {{ form.splitter_method.errors }}
+                    </label>
+                    <label>
+                        <span>{{ form.loader_type.label }}</span>
+                        {{ form.loader_type }}
+                        {{ form.loader_type.errors }}
+                    </label>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <h2>Embedding</h2>
+                <div class="field-grid">
+                    <label>
+                        <span>{{ form.embedding_provider.label }}</span>
+                        {{ form.embedding_provider }}
+                        {{ form.embedding_provider.errors }}
+                    </label>
+                    <label>
+                        <span>{{ form.embedding_model.label }}</span>
+                        {{ form.embedding_model }}
+                        {{ form.embedding_model.errors }}
+                    </label>
+                    <label>
+                        <span>{{ form.embedding_dimension.label }}</span>
+                        {{ form.embedding_dimension }}
+                        {{ form.embedding_dimension.errors }}
+                    </label>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <h2>Raw YAML</h2>
+                <p class="hint">Vùng này rộng để sửa trực tiếp toàn bộ file. Các field phía trên sẽ ghi đè giá trị tương ứng khi lưu.</p>
+                {{ form.raw_yaml }}
+                {{ form.raw_yaml.errors }}
+            </section>
+
+            <div class="form-footer">
+                <button type="submit">Lưu config.yaml</button>
+            </div>
+        </form>
+    </main>
+</body>
+</html>

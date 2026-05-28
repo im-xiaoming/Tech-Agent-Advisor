@@ -1,0 +1,117 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    color: #111827;
+    background: #ffffff;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+}
+
+.auth-page {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    padding: 24px;
+    background:
+        radial-gradient(circle at 50% 0, rgba(243, 244, 246, 0.9), transparent 34%),
+        #ffffff;
+}
+
+.auth-panel {
+    width: min(420px, 100%);
+    padding: 32px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
+}
+
+.auth-back,
+.auth-switch a {
+    color: #111827;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-back:hover,
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+.auth-panel h1 {
+    margin: 20px 0 8px;
+    color: #111827;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.auth-panel p {
+    margin: 0 0 22px;
+    color: #4b5563;
+}
+
+.auth-form {
+    display: grid;
+    gap: 10px;
+}
+
+.auth-form label {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.auth-form input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: #111827;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-form input:focus {
+    border-color: #9ca3af;
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+}
+
+.auth-form button {
+    min-height: 48px;
+    margin-top: 10px;
+    color: #ffffff;
+    background: #000000;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.auth-form button:hover {
+    background: #1f2937;
+}
+
+.errorlist {
+    margin: 0;
+    padding-left: 18px;
+    color: #dc2626;
+    font-size: 13px;
+}
+
+.auth-switch {
+    margin-top: 22px;
+    margin-bottom: 0;
+    font-size: 14px;
+}

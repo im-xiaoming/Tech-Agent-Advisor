@@ -260,30 +260,68 @@ body {
     background-color: var(--bg-hover);
 }
 
-/* .user-profile {
-    display: flex;
+.sidebar-footer .user-profile {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) 32px;
     align-items: center;
     gap: 12px;
+    width: 100%;
     padding: 12px;
-    margin-top: 8px;
+    margin-bottom: 8px;
     border-radius: 8px;
-    cursor: pointer;
     transition: background-color 0.2s;
 }
 
-.user-profile:hover {
+.sidebar-footer .user-profile:hover {
     background-color: var(--bg-hover);
-} */
+}
 
-.user-avatar {
-    width: 32px;
-    height: 32px;
+.sidebar-footer .user-avatar {
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: var(--bg-tertiary);
     border-radius: 50%;
     color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.sidebar-footer .user-name {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-footer .logout-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    justify-self: end;
+    color: var(--text-tertiary);
+    background: transparent;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar-footer .logout-link svg {
+    display: block;
+    flex: none;
+    color: inherit;
+    stroke: currentColor;
+}
+
+.sidebar-footer .logout-link:hover {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 /* Main Content */

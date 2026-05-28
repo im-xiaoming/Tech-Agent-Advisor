@@ -30,6 +30,8 @@ const weekHistory = document.getElementById('weekHistory');
 const monthHistory = document.getElementById('monthHistory');
 const mainContent = document.getElementById('mainContent');
 const chatApiUrl = mainContent?.dataset.chatApiUrl || '/message/';
+const chatHistoryUrl = mainContent?.dataset.chatHistoryUrl || '';
+const chatHistoryClearUrl = mainContent?.dataset.chatHistoryClearUrl || '';
 
 // State
 let currentChatId = null;
@@ -44,12 +46,12 @@ let settings = {
 let deleteTargetId = null;
 
 // Initialize
-function init() {
+async function init() {
     loadSettings();
-    loadChats();
     applySettings();
-    renderChatHistory();
     setupEventListeners();
+    await loadChats();
+    renderChatHistory();
 }
 
 // Load settings from localStorage
@@ -85,18 +87,74 @@ function applySettings() {
     enterSendToggle.checked = settings.enterSend;
 }
 
-// Load chats from localStorage
-function loadChats() {
+function getCsrfToken() {
+    const tokenInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (tokenInput?.value) return tokenInput.value;
+
+    const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+function getLocalChats() {
     const savedChats = localStorage.getItem('techChatHistory');
     if (savedChats) {
-        chats = JSON.parse(savedChats);
+        return JSON.parse(savedChats);
+    }
+    return [];
+}
+
+// Load chats from server, with localStorage as a fallback.
+async function loadChats() {
+    const localChats = getLocalChats();
+
+    if (!chatHistoryUrl) {
+        chats = localChats;
+        return;
+    }
+
+    try {
+        const response = await fetch(chatHistoryUrl, {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' },
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        chats = Array.isArray(data.chats) ? data.chats : [];
+
+        if (chats.length === 0 && localChats.length > 0) {
+            chats = localChats;
+            await saveChats();
+        }
+    } catch (error) {
+        chats = localChats;
+        showToast('Could not load server history. Using local history.', 'error');
     }
 }
 
-// Save chats to localStorage
-function saveChats() {
-    if (settings.saveHistory) {
-        localStorage.setItem('techChatHistory', JSON.stringify(chats));
+// Save chats to localStorage and server.
+async function saveChats() {
+    if (!settings.saveHistory) return;
+
+    localStorage.setItem('techChatHistory', JSON.stringify(chats));
+
+    if (!chatHistoryUrl) return;
+
+    try {
+        const response = await fetch(chatHistoryUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({ chats }),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+        showToast('Could not save history to server.', 'error');
     }
 }
 
@@ -236,10 +294,11 @@ function setupEventListeners() {
         saveSettings();
     });
     
-    clearHistoryBtn.addEventListener('click', () => {
+    clearHistoryBtn.addEventListener('click', async () => {
         if (confirm('Are you sure you want to clear all chat history?')) {
             chats = [];
             localStorage.removeItem('techChatHistory');
+            await clearServerHistory();
             renderChatHistory();
             startNewChat();
             showToast('All history cleared', 'success');
@@ -749,9 +808,10 @@ function hideDeleteModal() {
 }
 
 // Delete chat
-function deleteChat(chatId) {
+async function deleteChat(chatId) {
     chats = chats.filter(c => c.id !== chatId);
-    saveChats();
+    localStorage.setItem('techChatHistory', JSON.stringify(chats));
+    await deleteServerChat(chatId);
     renderChatHistory();
     
     if (currentChatId === chatId) {
@@ -759,6 +819,38 @@ function deleteChat(chatId) {
     }
     
     showToast('Conversation deleted', 'success');
+}
+
+async function deleteServerChat(chatId) {
+    if (!chatHistoryUrl) return;
+
+    try {
+        const response = await fetch(`${chatHistoryUrl}${encodeURIComponent(chatId)}/`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': getCsrfToken() },
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+        showToast('Could not delete server history.', 'error');
+    }
+}
+
+async function clearServerHistory() {
+    if (!chatHistoryClearUrl) return;
+
+    try {
+        const response = await fetch(chatHistoryClearUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': getCsrfToken() },
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+        showToast('Could not clear server history.', 'error');
+    }
 }
 
 // Export data

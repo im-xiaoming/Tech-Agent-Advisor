@@ -1,0 +1,190 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    color: #111827;
+    background: #f9fafb;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+}
+
+.manager-page {
+    width: min(1180px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 32px 0 48px;
+}
+
+.manager-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.eyebrow {
+    margin: 0 0 6px;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.manager-header h1 {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1.15;
+}
+
+.path,
+.hint {
+    margin: 8px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.manager-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.manager-actions a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 8px 12px;
+    color: #111827;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.message-list {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.message {
+    padding: 12px 14px;
+    color: #065f46;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.config-form {
+    display: grid;
+    gap: 16px;
+}
+
+.config-section {
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+}
+
+.config-section h2 {
+    margin: 0 0 16px;
+    font-size: 18px;
+}
+
+.field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+label {
+    display: grid;
+    gap: 6px;
+}
+
+label span {
+    color: #374151;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.manager-input {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    color: #111827;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.manager-input:focus {
+    border-color: #6b7280;
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+}
+
+.manager-yaml {
+    min-height: 420px;
+    resize: vertical;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.errorlist {
+    margin: 0;
+    padding-left: 18px;
+    color: #dc2626;
+    font-size: 13px;
+}
+
+.form-footer {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 0 0;
+    background: linear-gradient(transparent, #f9fafb 30%);
+}
+
+.form-footer button {
+    min-width: 180px;
+    min-height: 46px;
+    padding: 10px 18px;
+    color: #ffffff;
+    background: #000000;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.form-footer button:hover {
+    background: #1f2937;
+}
+
+@media (max-width: 760px) {
+    .manager-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .field-grid {
+        grid-template-columns: 1fr;
+    }
+}
