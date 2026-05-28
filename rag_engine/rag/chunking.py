@@ -1,4 +1,5 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import SentenceTransformersTokenTextSplitter
 from rag_engine.core.config import settings
 
 
@@ -7,6 +8,13 @@ def _get_splitter():
         print("Using tiktoken-based splitter for chunking.")
         return RecursiveCharacterTextSplitter.from_tiktoken_encoder(
             model_name="gpt-4",
+            chunk_size=settings.chunk_size,
+            chunk_overlap=settings.chunk_overlap,
+        )
+    elif settings.splitter_method == "sentence_transformer":
+        print("Using sentence-transformer-based splitter for chunking.")
+        return SentenceTransformersTokenTextSplitter(
+            model_name="BAAI/bge-m3",
             chunk_size=settings.chunk_size,
             chunk_overlap=settings.chunk_overlap,
         )

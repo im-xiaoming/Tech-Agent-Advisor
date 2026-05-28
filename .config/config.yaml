@@ -8,4 +8,4 @@ chat_history:
   max_length: 2048
   beam_size: 15
 splitter:
-  method: tiktoken # Options: recursive_character, tiktoken, sentence_transformer
+  method: sentence_transformer # Options: recursive_character, tiktoken, sentence_transformer
