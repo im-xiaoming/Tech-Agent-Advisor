@@ -2,7 +2,11 @@ import json
 import re
 import unicodedata
 from pathlib import Path
+from typing import Iterator
+
+from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
+
 from rag_engine.core.config import settings
 
 
@@ -46,29 +50,29 @@ def _display_price(record: dict) -> str:
     return str(record.get("price_raw") or "Not available")
 
 
-def _spec_value(specs: dict, *keywords: str) -> str:
-    for key, value in specs.items():
-        key_text = _searchable(key)
+def _spec_lookup(specs_norm: dict, *keywords: str) -> str:
+    for key_text, value in specs_norm.items():
         if all(keyword in key_text for keyword in keywords):
             return _clean_text(value)
     return ""
 
 
+def _floats(pattern: re.Pattern, text: str) -> list[float]:
+    return [float(match.replace(",", ".")) for match in pattern.findall(_clean_text(text))]
+
+
 def _first_float(pattern: re.Pattern, text: str) -> float | None:
-    match = pattern.search(_clean_text(text))
-    if not match:
-        return None
-    return float(match.group(1).replace(",", "."))
+    values = _floats(pattern, text)
+    return values[0] if values else None
 
 
 def _max_float(pattern: re.Pattern, text: str) -> float | None:
-    values = [float(match.replace(",", ".")) for match in pattern.findall(_clean_text(text))]
+    values = _floats(pattern, text)
     return max(values) if values else None
 
 
 def _camera_features(rear_camera: str, front_camera: str) -> dict:
     rear_text = _searchable(rear_camera)
-    front_text = _searchable(front_camera)
     rear_mp = _max_float(_MP_RE, rear_camera)
     front_mp = _max_float(_MP_RE, front_camera)
     best_aperture = _first_float(_APERTURE_RE, rear_camera)
@@ -106,15 +110,15 @@ def _structured_features(record: dict) -> dict:
     if not isinstance(specs, dict):
         specs = {}
 
-    chipset = _spec_value(specs, "chipset")
-    if not chipset:
-        chipset = _spec_value(specs, "chip")
+    # Normalize keys once to avoid repeated work across multiple lookups.
+    specs_norm = {_searchable(key): value for key, value in specs.items()}
 
-    ram = _first_float(_GB_RE, _spec_value(specs, "ram"))
-    storage = _first_float(_GB_RE, _spec_value(specs, "nho", "trong"))
-    battery = _first_float(_MAH_RE, _spec_value(specs, "pin"))
-    rear_camera = _spec_value(specs, "camera", "sau")
-    front_camera = _spec_value(specs, "camera", "truoc")
+    chipset = _spec_lookup(specs_norm, "chipset") or _spec_lookup(specs_norm, "chip")
+    ram = _first_float(_GB_RE, _spec_lookup(specs_norm, "ram"))
+    storage = _first_float(_GB_RE, _spec_lookup(specs_norm, "nho", "trong"))
+    battery = _first_float(_MAH_RE, _spec_lookup(specs_norm, "pin"))
+    rear_camera = _spec_lookup(specs_norm, "camera", "sau")
+    front_camera = _spec_lookup(specs_norm, "camera", "truoc")
     camera_features = _camera_features(rear_camera, front_camera)
 
     performance_score = min(float(ram or 0), 16) * 1.5
@@ -198,25 +202,25 @@ def _page_content(record: dict) -> str:
     return "\n\n".join(blocks)
 
 
-class JSONLoader:
+class JSONLoader(BaseLoader):
     """Load CellphoneS JSONL product records as LangChain documents."""
 
     def __init__(self, file_path=None):
         self.file_path = _jsonl_file(file_path)
 
-    def load(self) -> list[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         if not self.file_path.exists():
             raise FileNotFoundError(f"JSONL data file not found: {self.file_path}")
 
-        documents = []
         with self.file_path.open("r", encoding="utf-8") as source:
             for line_number, line in enumerate(source, start=1):
                 if not line.strip():
                     continue
                 record = self._load_record(line, line_number)
-                documents.append(self._record_to_document(record, line_number))
+                yield self._record_to_document(record, line_number)
 
-        return documents
+    def load(self) -> list[Document]:
+        return list(self.lazy_load())
 
     def _load_record(self, line: str, line_number: int) -> dict:
         try:

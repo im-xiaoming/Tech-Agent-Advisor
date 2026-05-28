@@ -101,49 +101,70 @@ def generate_response(system_prompt: str, user_prompt: str, temperature: float, 
         return _generate_ollama(system_prompt, user_prompt, temperature, reasoning)
 
 
+def _strip_reasoning(text: str) -> str:
+    """Remove <think>...</think> blocks some reasoning models emit."""
+    import re
+    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+
 def rewrite_query_for_retrieval(query: str, history: str = "") -> str:
+    """Rewrite the user query to be more effective for retrieval.
+
+    Returns the rewritten query, or the original query unchanged on failure.
     """
-    Rewrite the user query to be more effective for retrieval.
-    
-    Args:
-        query: The original user query.
-    
-    Returns:
-        The rewritten query optimized for retrieval.
-    """
-    
     system_prompt = f"""
     Lịch sử trò chuyện:
     {history}
-    
+
     SYSTEM PROMPT:
-    Dựa vào lịch sử trò chuyện và câu hỏi của người dùng, hãy viết lại câu hỏi theo cách rõ ràng, dễ hiểu hơn, để {settings.llm_model} có thể hiểu được nhưng vẫn giữ nguyên ý nghĩa. Câu hỏi sẽ được sử dụng để tìm kiếm tài liệu liên quan trong cơ sở dữ liệu, vì vậy hãy đảm bảo rằng nó chứa các từ khóa quan trọng và được diễn đạt một cách chính xác.
+    Dựa vào lịch sử trò chuyện và câu hỏi của người dùng, hãy viết lại câu hỏi này thành MỘT câu truy vấn ngắn gọn, rõ ràng, giàu từ khóa, để tìm kiếm tài liệu sản phẩm.
+
+    YÊU CẦU OUTPUT:
+    - CHỈ trả về duy nhất câu truy vấn đã viết lại, không thêm giải thích, không xuống dòng, không markdown, không đặt trong dấu ngoặc.
+    - Giữ nguyên ý nghĩa câu hỏi gốc.
+    - Tối đa 25 từ.
     """
-    
-    return generate_response(system_prompt, query, temperature=0.1)
+    try:
+        raw = generate_response(system_prompt, query, temperature=0.1)
+    except Exception:
+        return query
+
+    rewritten = _strip_reasoning(raw).strip().strip('"').strip("'")
+    # Take only the first non-empty line to defend against models that explain.
+    rewritten = next((line.strip() for line in rewritten.splitlines() if line.strip()), "")
+    return rewritten or query
 
 
 def classify_intent(query: str, history: str = "") -> str:
-    """
-    Classify the user query into one of the predefined intent categories.
-    
-    Args:
-        query (str): The user query to classify.
-        history (str, optional): The conversation history.
-    
-    Returns:
-        The predicted intent category (e.g., "smalltalk", "product_advice", "invalid").
-    """
+    """Classify the user query into ``smalltalk`` | ``product_advice`` | ``invalid``.
 
+    Always returns one of the three exact labels.
+    """
     system_prompt = f"""
     HISTORY:
     {history}
-    
+
     SYSTEM PROMPT:
-    Dựa vào lịch sử trò chuyện và câu hỏi của người dùng, hãy phân loại câu hỏi này vào một trong các danh mục sau: "smalltalk", "product_advice", "invalid".
+    Phân loại câu hỏi của người dùng vào ĐÚNG MỘT trong ba nhãn:
+    - smalltalk: chào hỏi, cảm ơn, trò chuyện phiếm.
+    - product_advice: hỏi/so sánh/tư vấn về sản phẩm (điện thoại, cấu hình, giá, camera, pin, hiệu năng chơi game, v.v.).
+    - invalid: câu rỗng hoặc hoàn toàn không liên quan đến hai loại trên.
+
+    YÊU CẦU OUTPUT:
+    - CHỈ trả về duy nhất một từ trong: smalltalk | product_advice | invalid
+    - Không giải thích, không thêm dấu câu, không xuống dòng.
     """
-    
-    return generate_response(system_prompt, query, temperature=0.1)
+    try:
+        raw = generate_response(system_prompt, query, temperature=0.0)
+    except Exception:
+        return "product_advice"
+
+    text = _strip_reasoning(raw).lower()
+    # First exact-token match wins.
+    for label in ("product_advice", "smalltalk", "invalid"):
+        if label in text:
+            return label
+    return "product_advice"
 
 
 

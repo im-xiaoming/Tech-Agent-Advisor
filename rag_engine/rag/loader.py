@@ -1,7 +1,7 @@
 from pathlib import Path
 from langchain_community.document_loaders import CSVLoader, DirectoryLoader
 from rag_engine.core.config import settings
-from .jsonl import JSONLoader
+from .tools import JSONLoader
 
 
 def load_data(directory_path=None):

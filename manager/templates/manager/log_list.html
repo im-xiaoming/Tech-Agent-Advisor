@@ -1,0 +1,112 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Logs</title>
+    <link rel="stylesheet" href="{% static 'manager/css/manager.css' %}">
+    <style>
+        .log-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .log-table th, .log-table td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; font-size: 14px; }
+        .log-table tr:hover { background: #f7f7f7; }
+        .flag { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .flag-unchecked { background: #eee; color: #555; }
+        .flag-ok { background: #d4edda; color: #155724; }
+        .flag-suspicious { background: #fff3cd; color: #856404; }
+        .flag-confirmed { background: #f8d7da; color: #721c24; }
+        .filters { display: flex; gap: 12px; flex-wrap: wrap; margin: 1rem 0; align-items: end; }
+        .filters label { display: flex; flex-direction: column; font-size: 13px; }
+        .filters input, .filters select { padding: 6px; }
+        .pagination { margin-top: 1rem; display: flex; gap: 8px; align-items: center; }
+        .truncate { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .score { font-family: monospace; }
+    </style>
+</head>
+<body>
+<main class="manager-page">
+    <header class="manager-header">
+        <div>
+            <p class="eyebrow">Admin manager</p>
+            <h1>Chat logs – hallucination review</h1>
+        </div>
+        <nav class="manager-actions">
+            <a href="{% url 'manager-config' %}">Config</a>
+            <a href="{% url 'admin:index' %}">Django admin</a>
+            <a href="{% url 'chat-view' %}">Chatbot</a>
+        </nav>
+    </header>
+
+    {% if messages %}
+        <div class="message-list">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="get" class="filters">
+        <label>
+            <span>Tìm trong query/answer</span>
+            <input type="text" name="q" value="{{ current_search }}" placeholder="từ khóa…">
+        </label>
+        <label>
+            <span>Username</span>
+            <input type="text" name="user" value="{{ current_user }}">
+        </label>
+        <label>
+            <span>Flag</span>
+            <select name="flag">
+                <option value="">— tất cả —</option>
+                {% for value, label in flag_choices %}
+                    <option value="{{ value }}" {% if value == current_flag %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit">Lọc</button>
+    </form>
+
+    <table class="log-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Thời gian</th>
+                <th>User</th>
+                <th>Query</th>
+                <th>Answer</th>
+                <th>Sources</th>
+                <th>Groundedness</th>
+                <th>Flag</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in page_obj %}
+                <tr>
+                    <td>#{{ log.id }}</td>
+                    <td>{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>{{ log.user.username|default:"-" }}</td>
+                    <td class="truncate" title="{{ log.query }}">{{ log.query }}</td>
+                    <td class="truncate" title="{{ log.answer }}">{{ log.answer|default:"—" }}</td>
+                    <td>{{ log.sources|length }}</td>
+                    <td class="score">{{ log.groundedness_score|default_if_none:"—"|floatformat:3 }}</td>
+                    <td><span class="flag flag-{{ log.hallucination_flag }}">{{ log.get_hallucination_flag_display }}</span></td>
+                    <td><a href="{% url 'manager-log-detail' log.id %}">Xem</a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="9" style="text-align:center;padding:2rem;">Chưa có log nào.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?{% if current_search %}q={{ current_search }}&{% endif %}{% if current_user %}user={{ current_user }}&{% endif %}{% if current_flag %}flag={{ current_flag }}&{% endif %}page={{ page_obj.previous_page_number }}">‹ Trước</a>
+        {% endif %}
+        <span>Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} log)</span>
+        {% if page_obj.has_next %}
+            <a href="?{% if current_search %}q={{ current_search }}&{% endif %}{% if current_user %}user={{ current_user }}&{% endif %}{% if current_flag %}flag={{ current_flag }}&{% endif %}page={{ page_obj.next_page_number }}">Sau ›</a>
+        {% endif %}
+    </div>
+</main>
+</body>
+</html>

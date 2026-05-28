@@ -36,4 +36,7 @@ def ask(query: str, history: str, db=None, temperature: float | None = None, top
         "answer": result.get("answer", ""),
         "sources": result.get("sources", []),
         "error": result.get("error"),
+        "retrieved_docs": result.get("retrieved_docs", []),
+        "context": result.get("context", ""),
+        "route": result.get("route", ""),
     }

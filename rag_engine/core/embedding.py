@@ -24,6 +24,6 @@ def get_embeddings():
         print("Use HuggingFaceEmbeddings...")
         return HuggingFaceEmbeddings(
             model_name=settings.embedding_model,
-            model_kwargs={"device": "gpu" if torch.cuda.is_available() else "cpu"},
+            model_kwargs={"device": "cuda" if torch.cuda.is_available() else "cpu"},
             encode_kwargs={"normalize_embeddings": True},
         )

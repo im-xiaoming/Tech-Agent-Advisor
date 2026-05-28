@@ -1,8 +1,7 @@
 """Supervisor agent: classify intent and decide route for the graph."""
 
 from rag_engine.agents.state import AgentState
-from rag_engine.core.llm import rewrite_query_for_retrieval, classify_intent
-
+from rag_engine.core.llm import classify_intent, rewrite_query_for_retrieval
 
 
 def supervisor_agent(state: AgentState) -> AgentState:
@@ -15,24 +14,27 @@ def supervisor_agent(state: AgentState) -> AgentState:
             "error": "Query is empty.",
             "answer": "Vui lòng nhập câu hỏi về sản phẩm cần tư vấn.",
         }
-    
-    intent = classify_intent(query, history=state.get("history", ""))
-    
-    if "invalid" in intent.lower():
+
+    intent = classify_intent(query, history=state.get("history", "")).strip().lower()
+
+    if intent == "invalid":
         return {
             **state,
             "query": query,
+            "original_query": query,
             "route": "invalid",
             "error": "Unable to classify intent.",
             "answer": "Xin lỗi, tôi không hiểu câu hỏi của bạn. Vui lòng hỏi về sản phẩm hoặc trò chuyện nhé.",
         }
 
-    
-    if "smalltalk" in intent.lower():
-        return {**state, "query": query, "route": "smalltalk"}
-    
-    
-    # For product advice, rewrite the query for better retrieval performance
-    query = rewrite_query_for_retrieval(query)
-    
-    return {**state, "query": query, "route": "product_advice"}
+    if intent == "smalltalk":
+        return {**state, "query": query, "original_query": query, "route": "smalltalk"}
+
+    # product_advice: rewrite for retrieval but keep the original for fallback.
+    rewritten = rewrite_query_for_retrieval(query, history=state.get("history", ""))
+    return {
+        **state,
+        "query": rewritten,
+        "original_query": query,
+        "route": "product_advice",
+    }

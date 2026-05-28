@@ -46,7 +46,21 @@ class Settings:
     chunk_size: int = config["chunking"]["chunk_size"]
     chunk_overlap: int = config["chunking"]["chunk_overlap"]
     score_threshold: float = config["retriever"]["score_threshold"]
-    
+
+    # reranker settings from config.yaml
+    reranker_enabled: bool = config.get("reranker", {}).get("enabled", False)
+    reranker_model: str = config.get("reranker", {}).get(
+        "model", "Alibaba-NLP/gte-multilingual-reranker-base"
+    )
+    reranker_top_n: int = config.get("reranker", {}).get("top_n", 5)
+    reranker_candidate_multiplier: int = config.get("reranker", {}).get(
+        "candidate_multiplier", 3
+    )
+    hallucination_threshold: float = config.get("reranker", {}).get(
+        "hallucination_threshold", 0.5
+    )
+    min_rerank_score: float = config.get("reranker", {}).get("min_rerank_score", 0.0)
+
     # chat history settings from config.yaml
     num_chats_retained: int = config["chat_history"]["num_chats_retained"]
     max_length: int = config["chat_history"]["max_length"]
