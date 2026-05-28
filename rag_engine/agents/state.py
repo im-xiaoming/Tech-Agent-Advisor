@@ -8,6 +8,7 @@ class AgentState(TypedDict):
     query: str
     original_query: NotRequired[str]
     history: NotRequired[str]
+    filters: NotRequired[dict]
     route: NotRequired[Literal["product_advice", "smalltalk", "invalid"]]
     retrieved_docs: NotRequired[list[Document]]
     context: NotRequired[str]

@@ -1,9 +1,15 @@
+from functools import lru_cache
+
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
 
 from rag_engine.core.config import settings
 from rag_engine.core.embedding import get_embeddings
+
+
+DENSE_VECTOR_NAME = "dense"
+SPARSE_VECTOR_NAME = "sparse"
 
 
 def _get_client() -> QdrantClient:
@@ -13,18 +19,21 @@ def _get_client() -> QdrantClient:
     return QdrantClient(
         url=settings.qdrant_url,
         api_key=settings.qdrant_api_key,
-        prefer_grpc=False,
+        prefer_grpc=True,
     )
 
 
 def _embedding_dim() -> int:
-    """
-    Get the embedding dimension by embedding a test string.
-    
-    Returns:
-        int: The dimension of the embedding vectors. 1024 is default for BAAI/bge-m3, but this method allows dynamic detection in case the model changes.
-    """
+    """Detect embedding dimension dynamically from the active model."""
     return len(get_embeddings().embed_query("dim probe"))
+
+
+@lru_cache(maxsize=1)
+def _get_sparse_embeddings():
+    """Lazy-load FastEmbed sparse model for hybrid search."""
+    from langchain_qdrant import FastEmbedSparse
+
+    return FastEmbedSparse(model_name=settings.sparse_model)
 
 
 def _collection_names(client: QdrantClient) -> set[str]:
@@ -33,14 +42,26 @@ def _collection_names(client: QdrantClient) -> set[str]:
 
 
 def _create_collection(client: QdrantClient, name: str, dim: int) -> None:
-    """Create a Qdrant collection with the expected vector configuration."""
-    client.create_collection(
-        collection_name=name,
-        vectors_config=qmodels.VectorParams(
-            size=dim,
-            distance=qmodels.Distance.COSINE,
-        ),
-    )
+    """Create a Qdrant collection sized for the active retrieval mode."""
+    if settings.hybrid_enabled:
+        client.create_collection(
+            collection_name=name,
+            vectors_config={
+                DENSE_VECTOR_NAME: qmodels.VectorParams(
+                    size=dim, distance=qmodels.Distance.COSINE,
+                ),
+            },
+            sparse_vectors_config={
+                SPARSE_VECTOR_NAME: qmodels.SparseVectorParams(),
+            },
+        )
+    else:
+        client.create_collection(
+            collection_name=name,
+            vectors_config=qmodels.VectorParams(
+                size=dim, distance=qmodels.Distance.COSINE,
+            ),
+        )
 
 
 def _recreate_collection(client: QdrantClient, name: str, dim: int) -> None:
@@ -50,17 +71,28 @@ def _recreate_collection(client: QdrantClient, name: str, dim: int) -> None:
     _create_collection(client, name, dim)
 
 
+def _build_vector_store(client: QdrantClient, name: str) -> QdrantVectorStore:
+    if settings.hybrid_enabled:
+        from langchain_qdrant import RetrievalMode
+
+        return QdrantVectorStore(
+            client=client,
+            collection_name=name,
+            embedding=get_embeddings(),
+            sparse_embedding=_get_sparse_embeddings(),
+            retrieval_mode=RetrievalMode.HYBRID,
+            vector_name=DENSE_VECTOR_NAME,
+            sparse_vector_name=SPARSE_VECTOR_NAME,
+        )
+    return QdrantVectorStore(
+        client=client,
+        collection_name=name,
+        embedding=get_embeddings(),
+    )
+
+
 def create_qdrant_db(chunks, collection_name: str | None = None):
-    """
-    Rebuild a Qdrant collection from chunks and return the vector store.
-    
-    Args:
-        chunks (list): A list of document chunks to be indexed.
-        collection_name (str, optional): The name of the Qdrant collection to rebuild. Defaults to None, which will use the collection name specified in settings.
-        
-    Returns:
-        QdrantVectorStore: The initialized vector store connected to the rebuilt collection.
-    """
+    """Rebuild a Qdrant collection from chunks and return the vector store."""
     if not chunks:
         raise ValueError("Cannot create Qdrant collection from empty chunks.")
 
@@ -68,14 +100,11 @@ def create_qdrant_db(chunks, collection_name: str | None = None):
     client = _get_client()
     _recreate_collection(client, name, _embedding_dim())
 
-    store = QdrantVectorStore(
-        client=client,
-        collection_name=name,
-        embedding=get_embeddings(),
-    )
+    store = _build_vector_store(client, name)
 
     batch_size = 32
-    print(f"Ingesting {len(chunks)} chunks into Qdrant collection '{name}'...")
+    mode = "hybrid (dense+sparse)" if settings.hybrid_enabled else "dense"
+    print(f"Ingesting {len(chunks)} chunks into Qdrant '{name}' [{mode}]...")
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i : i + batch_size]
         print(f"  batch {i} -> {i + len(batch)}")
@@ -93,11 +122,7 @@ def load_qdrant_db(collection_name: str | None = None):
     if name not in _collection_names(client):
         raise ValueError(f"Qdrant collection '{name}' not found.")
 
-    return QdrantVectorStore(
-        client=client,
-        collection_name=name,
-        embedding=get_embeddings(),
-    )
+    return _build_vector_store(client, name)
 
 
 def count_qdrant_vectors(db) -> int:

@@ -658,6 +658,8 @@ async function getBotResponse(userMessage) {
     let accumulated = '';
     let sources = [];
     let errorMessage = null;
+    let lowConfidence = false;
+    let regenerated = false;
 
     const ensurePlaceholder = () => {
         if (placeholder) return placeholder;
@@ -674,13 +676,21 @@ async function getBotResponse(userMessage) {
         return placeholder;
     };
 
+    const isNearBottom = () => {
+        const slack = 80;
+        return chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < slack;
+    };
+
     const renderInto = (text) => {
         const target = ensurePlaceholder();
         const contentEl = target.querySelector('.message-markdown')
             || target.querySelector('.message-content p')
             || target.querySelector('.message-content');
+        const wasAtBottom = isNearBottom();
         if (contentEl) contentEl.innerHTML = formatMessageBody(text);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+        if (wasAtBottom) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
     };
 
     try {
@@ -722,6 +732,16 @@ async function getBotResponse(userMessage) {
                 } catch (_) {
                     continue;
                 }
+                if (event.regenerating) {
+                    regenerated = true;
+                    accumulated = '';
+                    renderInto('_Đang viết lại với độ chính xác cao hơn…_');
+                    continue;
+                }
+                if (event.low_confidence) {
+                    lowConfidence = true;
+                    continue;
+                }
                 if (event.token) {
                     accumulated += event.token;
                     renderInto(accumulated);
@@ -736,7 +756,10 @@ async function getBotResponse(userMessage) {
             throw new Error(errorMessage);
         }
 
-        const finalContent = accumulated.trim() || 'Empty response.';
+        let finalContent = accumulated.trim() || 'Empty response.';
+        if (lowConfidence) {
+            finalContent += '\n\n> ⚠️ **Lưu ý:** câu trả lời này có độ tin cậy thấp so với dữ liệu trong kho. Vui lòng đối chiếu thêm với nhân viên hoặc trang sản phẩm.';
+        }
         renderInto(finalContent);
 
         const chat = chats.find(c => c.id === currentChatId);

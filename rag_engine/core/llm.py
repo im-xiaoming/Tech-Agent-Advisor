@@ -6,7 +6,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=8)
 def _get_llm_model(temperature: float, reasoning: bool = False):
     """Get the active LLM model based on configuration."""
     
@@ -83,6 +83,21 @@ def _generate_gemini(system_prompt: str, user_prompt: str, temperature: float) -
 
 
 
+def generate_response_stream(
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float,
+    reasoning: bool = False,
+):
+    """Yield content chunks from the active LLM. Works for both Ollama and Gemini."""
+    llm = _get_llm_model(temperature, reasoning=reasoning)
+    messages = [("system", system_prompt), ("user", user_prompt)]
+    for chunk in llm.stream(messages):
+        content = getattr(chunk, "content", "")
+        if content:
+            yield content
+
+
 def generate_response(system_prompt: str, user_prompt: str, temperature: float, reasoning: bool = False) -> str:
     """
     Call the active LLM and return the generated text.
@@ -105,6 +120,109 @@ def _strip_reasoning(text: str) -> str:
     """Remove <think>...</think> blocks some reasoning models emit."""
     import re
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+
+def _extract_json_blob(text: str) -> str:
+    """Pull the first {...} JSON object out of a possibly noisy LLM response."""
+    import re
+    match = re.search(r"\{.*\}", text, flags=re.DOTALL)
+    return match.group(0) if match else ""
+
+
+def classify_and_rewrite(query: str, history: str = "") -> dict:
+    """Single LLM call returning intent, rewritten query, and metadata filters.
+
+    Output schema::
+
+        {
+          "intent": "smalltalk" | "product_advice" | "invalid",
+          "rewritten": "...",
+          "filters": {
+              "brand": str?,           # e.g. "Apple", "Samsung"
+              "price_min": number?,    # VND
+              "price_max": number?,    # VND
+              "ram_min": number?,      # GB
+              "storage_min": number?,  # GB
+              "battery_min": number?,  # mAh
+          }
+        }
+
+    Falls back to ``product_advice`` + original query + empty filters on any
+    parsing failure.
+    """
+    import json
+
+    system_prompt = f"""
+    HISTORY:
+    {history}
+
+    NHIỆM VỤ:
+    1. Phân loại câu hỏi vào MỘT trong: smalltalk, product_advice, invalid.
+       - smalltalk: chào hỏi, cảm ơn, tạm biệt, trò chuyện phiếm.
+       - product_advice: hỏi/so sánh/tư vấn về sản phẩm công nghệ (điện thoại, laptop, PC, linh kiện, giá, cấu hình, camera, pin, hiệu năng…).
+       - invalid: rỗng hoặc hoàn toàn không liên quan.
+    2. Viết lại câu hỏi NGẮN, RÕ, giàu từ khóa cho tìm kiếm sản phẩm, tối đa 25 từ, giữ nguyên ý.
+       - Nếu intent KHÔNG phải product_advice: copy nguyên văn câu hỏi gốc.
+    3. Trích xuất "filters" — các ràng buộc người dùng nêu rõ. CHỈ điền field nào người dùng nói rõ; field không nói rõ KHÔNG đưa vào.
+       - brand (chuỗi): hãng/thương hiệu, vd. "Apple", "Samsung", "Xiaomi", "Oppo", "Vivo", "Realme", "Asus".
+       - price_min, price_max (số VND): "dưới 20 triệu" → price_max=20000000; "10-15 triệu" → price_min=10000000, price_max=15000000; "trên 30 triệu" → price_min=30000000.
+       - ram_min (số GB): "RAM 8GB trở lên" → ram_min=8.
+       - storage_min (số GB): "256GB" → storage_min=256.
+       - battery_min (số mAh): "pin 5000 mAh trở lên" → battery_min=5000.
+
+    YÊU CẦU OUTPUT:
+    - CHỈ trả về MỘT JSON object hợp lệ, KHÔNG markdown, KHÔNG giải thích, KHÔNG xuống dòng thừa.
+    - Schema: {{"intent": "smalltalk"|"product_advice"|"invalid", "rewritten": "...", "filters": {{...}}}}
+    - "filters" có thể là object rỗng {{}} nếu không có ràng buộc nào.
+    """
+    fallback = {"intent": "product_advice", "rewritten": query, "filters": {}}
+
+    try:
+        raw = generate_response(system_prompt, query, temperature=0.0)
+    except Exception:
+        return fallback
+
+    blob = _extract_json_blob(_strip_reasoning(raw))
+    if not blob:
+        return fallback
+
+    try:
+        data = json.loads(blob)
+    except json.JSONDecodeError:
+        return fallback
+
+    intent = str(data.get("intent", "")).strip().lower()
+    if intent not in {"smalltalk", "product_advice", "invalid"}:
+        intent = "product_advice"
+
+    rewritten = str(data.get("rewritten", "")).strip().strip('"').strip("'")
+    if not rewritten:
+        rewritten = query
+
+    raw_filters = data.get("filters") if isinstance(data.get("filters"), dict) else {}
+    filters = _sanitize_filters(raw_filters)
+
+    return {"intent": intent, "rewritten": rewritten, "filters": filters}
+
+
+_NUMERIC_FILTER_KEYS = {"price_min", "price_max", "ram_min", "storage_min", "battery_min"}
+
+
+def _sanitize_filters(raw: dict) -> dict:
+    """Keep only known keys with valid values; coerce numerics; drop empties."""
+    out: dict = {}
+    brand = raw.get("brand")
+    if isinstance(brand, str) and brand.strip():
+        out["brand"] = brand.strip()
+    for key in _NUMERIC_FILTER_KEYS:
+        value = raw.get(key)
+        if value is None or value == "":
+            continue
+        try:
+            out[key] = float(value)
+        except (TypeError, ValueError):
+            continue
+    return out
 
 
 def rewrite_query_for_retrieval(query: str, history: str = "") -> str:
@@ -168,7 +286,7 @@ def classify_intent(query: str, history: str = "") -> str:
 
 
 
-def summarize_history(history: str, reasoning: bool = True) -> str:
+def summarize_history(history: str, reasoning: bool = False) -> str:
     """
     Summarize the conversation history to make it more concise and user-friendly.
     

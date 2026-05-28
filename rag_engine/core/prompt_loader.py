@@ -1,20 +1,16 @@
+from functools import lru_cache
 from pathlib import Path
 from typing import Tuple
 from rag_engine.core.config import settings
 
 
+@lru_cache(maxsize=16)
 def load_prompt(prompt_path: str | Path) -> str:
-    """
-    Load prompt template from a file path or default config.
-    
-    Args:
-        prompt_path (str | Path): The path to the prompt template file.
-    
-    Returns:
-        str: The content of the prompt template.
-    """
+    """Load and cache a prompt template by path.
 
-    with open(prompt_path, "r", encoding="utf-8") as f:
+    Cached per resolved path string so repeated chats avoid re-reading disk.
+    """
+    with open(str(prompt_path), "r", encoding="utf-8") as f:
         return f.read()
 
 

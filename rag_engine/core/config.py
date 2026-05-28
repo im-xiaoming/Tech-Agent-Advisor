@@ -34,7 +34,7 @@ class Settings:
     llm_model: str = os.getenv("LLM_MODEL", 'jaahas/qwen3.5-uncensored')
     gemini_api_key: str | None = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     
-    rag_top_k: int = int(os.getenv("RAG_TOP_K", "10"))
+    rag_top_k: int = int(os.getenv("RAG_TOP_K", "5"))
     rag_temperature: float = float(os.getenv("RAG_TEMPERATURE", "0.1"))
 
     # Vector database (Qdrant) settings
@@ -46,6 +46,9 @@ class Settings:
     chunk_size: int = config["chunking"]["chunk_size"]
     chunk_overlap: int = config["chunking"]["chunk_overlap"]
     score_threshold: float = config["retriever"]["score_threshold"]
+    hybrid_enabled: bool = config.get("retriever", {}).get("hybrid_enabled", False)
+    sparse_model: str = config.get("retriever", {}).get("sparse_model", "Qdrant/bm25")
+    self_query_enabled: bool = config.get("retriever", {}).get("self_query_enabled", True)
 
     # reranker settings from config.yaml
     reranker_enabled: bool = config.get("reranker", {}).get("enabled", False)
@@ -60,6 +63,9 @@ class Settings:
         "hallucination_threshold", 0.5
     )
     min_rerank_score: float = config.get("reranker", {}).get("min_rerank_score", 0.0)
+    regenerate_enabled: bool = config.get("reranker", {}).get("regenerate_enabled", True)
+    regenerate_threshold: float = config.get("reranker", {}).get("regenerate_threshold", 0.4)
+    max_regenerations: int = config.get("reranker", {}).get("max_regenerations", 1)
 
     # chat history settings from config.yaml
     num_chats_retained: int = config["chat_history"]["num_chats_retained"]

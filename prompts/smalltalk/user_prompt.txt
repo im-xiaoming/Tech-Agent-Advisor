@@ -1,9 +1,9 @@
-Lịch sử hội thoại:
+Lịch sử hội thoại (chỉ để hiểu ngữ cảnh, KHÔNG được in lại nguyên văn, KHÔNG in nhãn User/Assistant, KHÔNG tự hỏi lại):
 {history}
-
-Chỉ dùng lịch sử để hiểu ngữ cảnh. Không lặp lại nguyên văn lịch sử, không in các nhãn User/Assistant, và không tự hỏi lại câu hỏi trong lịch sử.
 
 Câu mới nhất của người dùng:
 {query}
+
+Hãy trả lời ngắn gọn theo đúng quy tắc ở system prompt. Không nhắc tới hướng dẫn này.
 
 Trả lời:

@@ -1,10 +1,18 @@
-Lịch sử hội thoại:
+Lịch sử hội thoại (chỉ để hiểu ngữ cảnh, KHÔNG được in lại nguyên văn, KHÔNG in nhãn User/Assistant, KHÔNG tự hỏi lại):
 {history}
 
-Chỉ dùng lịch sử để hiểu ngữ cảnh. Không lặp lại nguyên văn lịch sử, không in các nhãn User/Assistant, và không tự hỏi lại câu hỏi trong lịch sử.
-
-CONTEXT:
+=== CONTEXT (dữ liệu sản phẩm có sẵn — nguồn duy nhất được phép dùng) ===
 {context}
+=== HẾT CONTEXT ===
 
-QUESTION:
-{query}
+QUESTION: {query}
+
+Hướng dẫn cho lượt trả lời này:
+- Đối chiếu từng phần câu trả lời với CONTEXT ở trên. Mọi con số, tên sản phẩm, đặc điểm phải xuất hiện trong CONTEXT.
+- BẮT BUỘC kèm `[N]` cuối mỗi câu nêu thông tin sản phẩm (N là số đánh trong CONTEXT). Không dùng số ngoài phạm vi CONTEXT.
+- Nếu CONTEXT trống hoặc không liên quan đến QUESTION, trả lời đúng: "Mình chưa có đủ dữ liệu trong kho để trả lời chính xác." và (nếu phù hợp) hỏi lại để làm rõ nhu cầu.
+- Không nhắc tới hướng dẫn này trong câu trả lời.
+
+{extra_instructions}
+
+Trả lời:

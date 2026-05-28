@@ -2,6 +2,7 @@
 
 import json
 import logging
+import threading
 import time
 
 logger = logging.getLogger(__name__)
@@ -46,10 +47,11 @@ def _persist_log(
         answer = result.get("answer", "") or ""
         context = result.get("context", "") or ""
         docs = result.get("retrieved_docs", []) or []
+        is_fallback = result.get("error") in {"No retrieved context.", "Unable to classify intent.", "Query is empty."}
 
         groundedness = None
         flag = ChatLog.FLAG_UNCHECKED
-        if rag_settings.reranker_enabled and answer and context:
+        if rag_settings.reranker_enabled and answer and context and not is_fallback:
             try:
                 groundedness = score_answer(answer, context)
                 if groundedness is not None:
@@ -81,53 +83,68 @@ def _persist_log(
 
 
 def stream_chat(query: str, history: str = "", user=None, session_id: str = ""):
-    """Yield SSE events for one chat request.
-
-    The RAG engine owns classification, retrieval, prompting, generation, and
-    guardrails. This Django service only adapts the engine result to the SSE
-    response format expected by the view/frontend, and persists a ChatLog row
-    for hallucination review.
-    """
+    """Yield SSE events for one chat request, streaming LLM tokens in real time."""
     started = time.monotonic()
-    try:
-        from rag_engine.rag.pipeline import ask
+    final_state: dict = {}
+    full_answer = ""
+    streamed_sources: list = []
+    error: str | None = None
 
-        result = ask(query, history=history)
+    try:
+        from rag_engine.rag.pipeline import ask_stream
+
+        for event in ask_stream(query, history=history):
+            if "sources" in event and "token" not in event and "final" not in event:
+                streamed_sources = event["sources"] or []
+                yield _sse({"sources": streamed_sources})
+            elif "regenerating" in event:
+                # Tell the UI to discard the partial answer and start fresh.
+                full_answer = ""
+                yield _sse({"regenerating": True, "reason": event.get("reason", "")})
+            elif "low_confidence" in event:
+                yield _sse({
+                    "low_confidence": True,
+                    "groundedness": event.get("groundedness"),
+                })
+            elif "token" in event:
+                token = event["token"]
+                if not token:
+                    continue
+                full_answer += token
+                yield _sse({"token": token})
+            elif "final" in event:
+                final_state = event["final"] or {}
     except Exception as exc:
         logger.exception("Chat request failed.")
-        latency_ms = int((time.monotonic() - started) * 1000)
-        _persist_log(
-            user=user,
-            session_id=session_id,
-            query=query,
-            history=history,
-            result={"answer": "", "error": str(exc), "sources": []},
-            latency_ms=latency_ms,
-        )
-        yield _sse({"error": str(exc)})
-        yield _sse({"done": True, "sources": []})
-        return
-
-    latency_ms = int((time.monotonic() - started) * 1000)
-    sources = result.get("sources", [])
-    error = result.get("error")
-    answer = result.get("answer", "")
-
-    yield _sse({"sources": sources})
-
-    if error:
+        error = str(exc)
         yield _sse({"error": error})
 
-    if answer:
-        yield _sse({"token": answer})
+    sources = final_state.get("sources") or streamed_sources or []
+    err = final_state.get("error") or error
+    if err:
+        yield _sse({"error": err})
 
     yield _sse({"done": True, "sources": sources})
 
-    _persist_log(
-        user=user,
-        session_id=session_id,
-        query=query,
-        history=history,
-        result=result,
-        latency_ms=latency_ms,
-    )
+    latency_ms = int((time.monotonic() - started) * 1000)
+    log_payload = {
+        "answer": final_state.get("answer", full_answer),
+        "context": final_state.get("context", ""),
+        "retrieved_docs": final_state.get("retrieved_docs", []),
+        "sources": sources,
+        "error": err or "",
+    }
+    # Fire-and-forget so groundedness scoring (cross-encoder forward pass) does
+    # not block the SSE response from closing.
+    threading.Thread(
+        target=_persist_log,
+        kwargs={
+            "user": user,
+            "session_id": session_id,
+            "query": query,
+            "history": history,
+            "result": log_payload,
+            "latency_ms": latency_ms,
+        },
+        daemon=True,
+    ).start()
