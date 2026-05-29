@@ -419,8 +419,8 @@ body {
     margin: 0;
     color: var(--hero-title);
     font-size: clamp(54px, 9vw, 126px);
-    font-weight: 400;
-    line-height: 0.92;
+    /* font-weight: 400; */
+    /* line-height: 0.92; */
     letter-spacing: 0;
     word-spacing: 0;
     filter: drop-shadow(0 0 18px var(--hero-glow));
