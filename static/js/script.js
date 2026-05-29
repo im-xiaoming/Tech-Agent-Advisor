@@ -23,6 +23,7 @@ const darkModeToggle = document.getElementById('darkModeToggle');
 const fontSizeSelect = document.getElementById('fontSizeSelect');
 const saveHistoryToggle = document.getElementById('saveHistoryToggle');
 const enterSendToggle = document.getElementById('enterSendToggle');
+const xianxiaToggle = document.getElementById('xianxiaToggle');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 const exportDataBtn = document.getElementById('exportDataBtn');
 const todayHistory = document.getElementById('todayHistory');
@@ -43,7 +44,8 @@ let settings = {
     darkMode: false,
     fontSize: 'medium',
     saveHistory: true,
-    enterSend: true
+    enterSend: true,
+    xianxiaEffect: true
 };
 let deleteTargetId = null;
 
@@ -88,6 +90,7 @@ function applySettings() {
     // Other toggles
     saveHistoryToggle.checked = settings.saveHistory;
     enterSendToggle.checked = settings.enterSend;
+    xianxiaToggle.checked = settings.xianxiaEffect;
 }
 
 function getCsrfToken() {
@@ -349,6 +352,11 @@ function setupEventListeners() {
     
     enterSendToggle.addEventListener('change', () => {
         settings.enterSend = enterSendToggle.checked;
+        saveSettings();
+    });
+
+    xianxiaToggle.addEventListener('change', () => {
+        settings.xianxiaEffect = xianxiaToggle.checked;
         saveSettings();
     });
     
@@ -713,6 +721,117 @@ function hideTypingIndicator() {
     }
 }
 
+// ── Xianxia particle burst helpers ──
+let _xpLastSpawn = 0;
+
+function getLastCharRect(el) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let last = null;
+    let node;
+    while ((node = walker.nextNode())) {
+        if (node.textContent.trim()) last = node;
+    }
+    if (!last) return null;
+    const range = document.createRange();
+    const len = last.textContent.length;
+    range.setStart(last, Math.max(0, len - 1));
+    range.setEnd(last, len);
+    const r = range.getBoundingClientRect();
+    if (!r.width && !r.height) return null;
+    return { x: r.right, y: r.top + r.height * 0.5 };
+}
+
+function spawnXianxiaParticles(contentEl) {
+    if (!settings.xianxiaEffect) return;
+    const now = Date.now();
+    if (now - _xpLastSpawn < 65) return;
+    _xpLastSpawn = now;
+
+    const pos = getLastCharRect(contentEl);
+    if (!pos) return;
+
+    const GOLD = ['#f5c842', '#fbbf24', '#e8a020'];
+    const JADE = ['#34d399', '#2aaa74', '#6ee7b7'];
+    const WHITE = ['#ffffff', '#e0f0ff'];
+    const palette = [...GOLD, ...GOLD, ...JADE, ...WHITE];
+
+    const count = 6 + (Math.random() * 4 | 0);
+    for (let i = 0; i < count; i++) {
+        const isSpark = Math.random() > 0.55;
+        const color = palette[Math.random() * palette.length | 0];
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 22 + Math.random() * 58;
+        const dx = Math.cos(angle) * speed;
+        const dy = Math.sin(angle) * speed - 10;
+        const dur = (0.38 + Math.random() * 0.32).toFixed(2);
+        const w = isSpark ? 2 : (2 + Math.random() * 4 | 0);
+        const h = isSpark ? (5 + Math.random() * 6 | 0) : w;
+        const rot = isSpark ? `${Math.atan2(dy, dx) * 180 / Math.PI + 90}deg` : '0deg';
+
+        const p = document.createElement('div');
+        p.className = 'xianxia-particle' + (isSpark ? ' spark' : '');
+        p.style.cssText =
+            `left:${pos.x}px;top:${pos.y}px;` +
+            `width:${w}px;height:${h}px;` +
+            `background:${color};` +
+            `box-shadow:0 0 5px ${color},0 0 10px ${color};` +
+            `--pdx:${dx}px;--pdy:${dy}px;--pdur:${dur}s;` +
+            `transform:rotate(${rot});` +
+            `margin-left:-${w/2}px;margin-top:-${h/2}px;`;
+        document.body.appendChild(p);
+        p.addEventListener('animationend', () => p.remove(), { once: true });
+    }
+
+    // Ring pulse
+    const ring = document.createElement('div');
+    ring.className = 'xianxia-ring';
+    ring.style.cssText = `left:${pos.x}px;top:${pos.y}px;`;
+    document.body.appendChild(ring);
+    ring.addEventListener('animationend', () => ring.remove(), { once: true });
+}
+
+// Apply xianxia character-seal animation to a rendered bot message element
+function applyXianxiaEffect(container) {
+    if (!settings.xianxiaEffect) return;
+
+    const MAX_CHARS = 700;
+    const CHAR_DELAY_MS = 7;
+    const ANIM_DURATION_MS = 900;
+
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    let node;
+    while ((node = walker.nextNode())) textNodes.push(node);
+
+    let charIndex = 0;
+    for (const textNode of textNodes) {
+        const text = textNode.textContent;
+        if (!text.trim() || charIndex >= MAX_CHARS) break;
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < text.length; i++) {
+            if (charIndex >= MAX_CHARS) {
+                frag.appendChild(document.createTextNode(text.slice(i)));
+                break;
+            }
+            const span = document.createElement('span');
+            span.className = 'xianxia-char';
+            span.style.animationDelay = `${charIndex * CHAR_DELAY_MS}ms`;
+            span.textContent = text[i];
+            frag.appendChild(span);
+            charIndex++;
+        }
+        textNode.parentNode.replaceChild(frag, textNode);
+    }
+
+    const cleanup = charIndex * CHAR_DELAY_MS + ANIM_DURATION_MS + 200;
+    setTimeout(() => {
+        container.querySelectorAll('.xianxia-char').forEach(span => {
+            if (span.parentNode) span.parentNode.replaceChild(document.createTextNode(span.textContent), span);
+        });
+        container.normalize();
+    }, cleanup);
+}
+
 async function getBotResponse(userMessage) {
     isAwaitingResponse = true;
     sendBtn.disabled = true;
@@ -736,6 +855,7 @@ async function getBotResponse(userMessage) {
         wrapper.innerHTML = createMessageHTML(botMessage);
         placeholder = wrapper.firstElementChild;
         messagesArea.appendChild(placeholder);
+        if (settings.xianxiaEffect) placeholder.classList.add('xianxia-streaming');
         return placeholder;
     };
 
@@ -750,7 +870,10 @@ async function getBotResponse(userMessage) {
             || target.querySelector('.message-content p')
             || target.querySelector('.message-content');
         const wasAtBottom = isNearBottom();
-        if (contentEl) contentEl.innerHTML = formatMessageBody(text);
+        if (contentEl) {
+            contentEl.innerHTML = formatMessageBody(text);
+            spawnXianxiaParticles(contentEl);
+        }
         if (wasAtBottom) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -825,6 +948,11 @@ async function getBotResponse(userMessage) {
             finalContent += '\n\n> ⚠️ **Lưu ý:** câu trả lời này có độ tin cậy thấp so với dữ liệu trong kho. Vui lòng đối chiếu thêm với nhân viên hoặc trang sản phẩm.';
         }
         renderInto(finalContent);
+        if (placeholder) {
+            placeholder.classList.remove('xianxia-streaming');
+            const contentEl = placeholder.querySelector('.message-markdown');
+            if (contentEl) applyXianxiaEffect(contentEl);
+        }
 
         const chat = chats.find(c => c.id === currentChatId);
         if (chat) {
@@ -853,6 +981,7 @@ async function getBotResponse(userMessage) {
             renderChatHistory();
         }
     } finally {
+        if (placeholder) placeholder.classList.remove('xianxia-streaming');
         hideTypingIndicator();
         isAwaitingResponse = false;
         sendBtn.disabled = false;

@@ -856,6 +856,8 @@ body {
     max-width: 500px;
     max-height: 90vh;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     box-shadow: var(--shadow-lg);
     animation: modalSlideIn 0.3s ease;
 }
@@ -909,6 +911,8 @@ body {
 .modal-content {
     padding: 24px;
     overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .modal-actions {
@@ -1200,4 +1204,83 @@ body {
 
 .toast.error {
     border-color: var(--danger-color);
+}
+
+/* ── Xianxia Cultivation Effect ── */
+:root {
+    --xianxia-gold: #c8962a;
+    --xianxia-jade: #2aaa74;
+}
+
+[data-theme="dark"] {
+    --xianxia-gold: #f5c842;
+    --xianxia-jade: #34d399;
+}
+
+@keyframes xianxia-char-seal {
+    0%   {
+        color: var(--xianxia-gold);
+        text-shadow: 0 0 6px var(--xianxia-gold), 0 0 16px var(--xianxia-gold);
+    }
+    55%  {
+        color: var(--xianxia-jade);
+        text-shadow: 0 0 4px var(--xianxia-jade);
+    }
+    100% {
+        color: inherit;
+        text-shadow: none;
+    }
+}
+
+@keyframes xianxia-aura-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 transparent;
+    }
+    50% {
+        box-shadow: 0 0 18px rgba(200, 150, 42, 0.22), 0 0 36px rgba(42, 170, 116, 0.09);
+    }
+}
+
+.xianxia-char {
+    display: inline;
+    animation: xianxia-char-seal 0.9s ease-out forwards;
+}
+
+.xianxia-streaming {
+    border-radius: 6px;
+    animation: xianxia-aura-pulse 1.8s ease-in-out infinite;
+}
+
+/* Particle burst on each token */
+@keyframes xianxia-particle-fly {
+    0%   { transform: translate(0, 0) scale(1.2); opacity: 1; }
+    60%  { opacity: 0.7; }
+    100% { transform: translate(var(--pdx), var(--pdy)) scale(0); opacity: 0; }
+}
+
+@keyframes xianxia-ring-expand {
+    0%   { width: 4px; height: 4px; opacity: 0.9; border-width: 2px; }
+    100% { width: 28px; height: 28px; opacity: 0; border-width: 0.5px; }
+}
+
+.xianxia-particle {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    animation: xianxia-particle-fly var(--pdur, 0.55s) cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+
+.xianxia-particle.spark {
+    border-radius: 2px;
+}
+
+.xianxia-ring {
+    position: fixed;
+    border: 2px solid #f5c842;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    animation: xianxia-ring-expand 0.38s ease-out forwards;
 }
