@@ -130,7 +130,7 @@ def create_qdrant_db(chunks, collection_name: str | None = None):
 
     store = _build_vector_store(client, name)
 
-    batch_size = 32
+    batch_size = max(int(settings.qdrant_ingest_batch_size), 1)
     mode = "hybrid (dense+sparse)" if settings.hybrid_enabled else "dense"
     print(f"Ingesting {len(chunks)} chunks into Qdrant '{name}' [{mode}]...")
     for i in range(0, len(chunks), batch_size):

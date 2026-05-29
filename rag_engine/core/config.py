@@ -25,6 +25,19 @@ class Settings:
     embedding_provider: str = config['embedding']['embedding_provider']
     embedding_model: str = config['embedding']['embedding_model']
     embedding_dimension: int = config['embedding']['dimension']
+    embedding_device: str = os.getenv(
+        "EMBEDDING_DEVICE",
+        config["embedding"].get("device", "auto"),
+    ).lower()
+    embedding_batch_size: int = int(
+        os.getenv("EMBEDDING_BATCH_SIZE", config["embedding"].get("batch_size", 2))
+    )
+    embedding_max_seq_length: int = int(
+        os.getenv("EMBEDDING_MAX_SEQ_LENGTH", config["embedding"].get("max_seq_length", 512))
+    )
+    qdrant_ingest_batch_size: int = int(
+        os.getenv("QDRANT_INGEST_BATCH_SIZE", config["embedding"].get("ingest_batch_size", 8))
+    )
     
     # Splitter
     splitter_method: str = config["splitter"]["method"]

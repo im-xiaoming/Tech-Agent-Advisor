@@ -6,10 +6,46 @@ from rag_engine.rag.retriever import retrieve
 from rag_engine.rag.tools import rerank_documents
 
 
+_PRODUCT_TYPE_TERMS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
+    (
+        ("tai nghe", "headphone", "headphones", "earphone", "earphones", "earbud", "earbuds", "airpods", "buds"),
+        ("tai nghe", "headphone", "headset", "earphone", "earbud", "airpods", "buds", "inzone", "wh-", "wf-"),
+    ),
+)
+
+
+def _text(doc) -> str:
+    metadata = getattr(doc, "metadata", {}) or {}
+    return " ".join(
+        str(value or "")
+        for value in (
+            metadata.get("title"),
+            metadata.get("source"),
+            getattr(doc, "page_content", ""),
+        )
+    ).lower()
+
+
+def _matching_product_terms(query: str) -> tuple[str, ...]:
+    normalized = query.lower()
+    for query_terms, doc_terms in _PRODUCT_TYPE_TERMS:
+        if any(term in normalized for term in query_terms):
+            return doc_terms
+    return ()
+
+
+def _filter_product_type(query: str, docs: list) -> list:
+    doc_terms = _matching_product_terms(query)
+    if not doc_terms:
+        return docs
+    return [doc for doc in docs if any(term in _text(doc) for term in doc_terms)]
+
+
 def _fetch_and_rerank(db, query: str, top_k: int, filters: dict | None):
     if settings.reranker_enabled:
         fetch_k = max(top_k, top_k * settings.reranker_candidate_multiplier)
         candidates = retrieve(db, query, k=fetch_k, filters=filters)
+        candidates = _filter_product_type(query, candidates)
         if not candidates:
             return []
         ranked = rerank_documents(query, candidates, top_n=top_k)
@@ -20,7 +56,7 @@ def _fetch_and_rerank(db, query: str, top_k: int, filters: dict | None):
                 if (doc.metadata.get("rerank_score") or 0) >= threshold
             ]
         return ranked
-    return retrieve(db, query, k=top_k, filters=filters)
+    return _filter_product_type(query, retrieve(db, query, k=top_k, filters=filters))
 
 
 def make_retrieval_agent(db: VectorStore, default_top_k: int):

@@ -22,8 +22,18 @@ def get_embeddings():
         )
     else:
         print("Use HuggingFaceEmbeddings...")
-        return HuggingFaceEmbeddings(
+        device = settings.embedding_device
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        embeddings = HuggingFaceEmbeddings(
             model_name=settings.embedding_model,
-            model_kwargs={"device": "cuda" if torch.cuda.is_available() else "cpu"},
-            encode_kwargs={"normalize_embeddings": True},
+            model_kwargs={"device": device},
+            encode_kwargs={
+                "normalize_embeddings": True,
+                "batch_size": settings.embedding_batch_size,
+            },
         )
+        if settings.embedding_max_seq_length > 0:
+            embeddings._client.max_seq_length = settings.embedding_max_seq_length
+        return embeddings

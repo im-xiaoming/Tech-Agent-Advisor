@@ -303,7 +303,7 @@ def summarize_history(history: str, reasoning: bool = False) -> str:
 
     system_prompt = f"""
     SYSTEM PROMPT:
-    Summarize the following conversation history in a concise and easy-to-understand way while preserving its main meaning:
+    Summarize the following conversation history in a concise and easy-to-understand way while preserving its main meaning.
     """
     
     return generate_response(system_prompt, history, temperature=0.1, reasoning=reasoning)

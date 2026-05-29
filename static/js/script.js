@@ -23,7 +23,7 @@ const darkModeToggle = document.getElementById('darkModeToggle');
 const fontSizeSelect = document.getElementById('fontSizeSelect');
 const saveHistoryToggle = document.getElementById('saveHistoryToggle');
 const enterSendToggle = document.getElementById('enterSendToggle');
-const xianxiaToggle = document.getElementById('xianxiaToggle');
+const xianxiaSelect = document.getElementById('xianxiaSelect');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 const exportDataBtn = document.getElementById('exportDataBtn');
 const todayHistory = document.getElementById('todayHistory');
@@ -33,7 +33,9 @@ const mainContent = document.getElementById('mainContent');
 const chatApiUrl = mainContent?.dataset.chatApiUrl || '/message/';
 const chatHistoryUrl = mainContent?.dataset.chatHistoryUrl || '';
 const chatHistoryClearUrl = mainContent?.dataset.chatHistoryClearUrl || '';
-const activeChatStorageKey = 'techChatActiveId';
+const currentUserStorageId = mainContent?.dataset.userId || 'anonymous';
+const chatHistoryStorageKey = `techChatHistory:${currentUserStorageId}`;
+const activeChatStorageKey = `techChatActiveId:${currentUserStorageId}`;
 const newChatSentinel = '__new_chat__';
 
 // State
@@ -45,7 +47,7 @@ let settings = {
     fontSize: 'medium',
     saveHistory: true,
     enterSend: true,
-    xianxiaEffect: true
+    xianxiaEffect: 'seal'
 };
 let deleteTargetId = null;
 
@@ -56,7 +58,11 @@ async function init() {
     setupEventListeners();
     await loadChats();
     renderChatHistory();
-    restoreActiveChat();
+    if (isPageReload()) {
+        restoreActiveChat();
+    } else {
+        persistActiveChatId(null);
+    }
 }
 
 // Load settings from localStorage
@@ -64,6 +70,15 @@ function loadSettings() {
     const savedSettings = localStorage.getItem('techChatSettings');
     if (savedSettings) {
         settings = { ...settings, ...JSON.parse(savedSettings) };
+    }
+    // Migrate old boolean xianxiaEffect → string
+    if (typeof settings.xianxiaEffect === 'boolean') {
+        settings.xianxiaEffect = settings.xianxiaEffect ? 'seal' : 'off';
+        saveSettings();
+    }
+    if (!['off', 'seal', 'decode'].includes(settings.xianxiaEffect)) {
+        settings.xianxiaEffect = 'seal';
+        saveSettings();
     }
 }
 
@@ -90,7 +105,7 @@ function applySettings() {
     // Other toggles
     saveHistoryToggle.checked = settings.saveHistory;
     enterSendToggle.checked = settings.enterSend;
-    xianxiaToggle.checked = settings.xianxiaEffect;
+    xianxiaSelect.value = settings.xianxiaEffect;
 }
 
 function getCsrfToken() {
@@ -102,7 +117,7 @@ function getCsrfToken() {
 }
 
 function getLocalChats() {
-    const savedChats = localStorage.getItem('techChatHistory');
+    const savedChats = localStorage.getItem(chatHistoryStorageKey);
     if (savedChats) {
         return JSON.parse(savedChats);
     }
@@ -150,6 +165,12 @@ function persistActiveChatId(chatId) {
     }
 }
 
+function isPageReload() {
+    const [navigation] = performance.getEntriesByType?.('navigation') || [];
+    if (navigation?.type) return navigation.type === 'reload';
+    return performance.navigation?.type === 1;
+}
+
 function restoreActiveChat() {
     const savedChatId = localStorage.getItem(activeChatStorageKey);
     if (savedChatId === newChatSentinel) return;
@@ -184,10 +205,7 @@ async function loadChats() {
         const data = await response.json();
         chats = normalizeChats(data.chats);
 
-        if (chats.length === 0 && localChats.length > 0) {
-            chats = normalizeChats(localChats);
-            await saveChats();
-        }
+        localStorage.setItem(chatHistoryStorageKey, JSON.stringify(chats));
     } catch (error) {
         chats = normalizeChats(localChats);
         showToast('Could not load server history. Using local history.', 'error');
@@ -198,7 +216,7 @@ async function loadChats() {
 async function saveChats() {
     if (!settings.saveHistory) return;
 
-    localStorage.setItem('techChatHistory', JSON.stringify(chats));
+    localStorage.setItem(chatHistoryStorageKey, JSON.stringify(chats));
 
     if (!chatHistoryUrl) return;
 
@@ -355,15 +373,16 @@ function setupEventListeners() {
         saveSettings();
     });
 
-    xianxiaToggle.addEventListener('change', () => {
-        settings.xianxiaEffect = xianxiaToggle.checked;
+    xianxiaSelect.addEventListener('change', () => {
+        settings.xianxiaEffect = xianxiaSelect.value;
         saveSettings();
     });
     
     clearHistoryBtn.addEventListener('click', async () => {
         if (confirm('Are you sure you want to clear all chat history?')) {
             chats = [];
-            localStorage.removeItem('techChatHistory');
+            localStorage.removeItem(chatHistoryStorageKey);
+            localStorage.removeItem(activeChatStorageKey);
             await clearServerHistory();
             renderChatHistory();
             startNewChat();
@@ -721,6 +740,12 @@ function hideTypingIndicator() {
     }
 }
 
+// Replace non-whitespace chars with random safe Latin chars
+function scrambleText(text) {
+    const S = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%*?';
+    return Array.from(text).map(ch => (ch.trim() ? S[Math.random() * S.length | 0] : ch)).join('');
+}
+
 // ── Xianxia particle burst helpers ──
 let _xpLastSpawn = 0;
 
@@ -742,7 +767,7 @@ function getLastCharRect(el) {
 }
 
 function spawnXianxiaParticles(contentEl) {
-    if (!settings.xianxiaEffect) return;
+    if (settings.xianxiaEffect === 'off') return;
     const now = Date.now();
     if (now - _xpLastSpawn < 65) return;
     _xpLastSpawn = now;
@@ -750,10 +775,10 @@ function spawnXianxiaParticles(contentEl) {
     const pos = getLastCharRect(contentEl);
     if (!pos) return;
 
-    const GOLD = ['#f5c842', '#fbbf24', '#e8a020'];
-    const JADE = ['#34d399', '#2aaa74', '#6ee7b7'];
-    const WHITE = ['#ffffff', '#e0f0ff'];
-    const palette = [...GOLD, ...GOLD, ...JADE, ...WHITE];
+    const TERMINAL = ['#39ff14', '#00e676', '#00c853', '#00ff66', '#b7ffbf'];
+    const palette = settings.xianxiaEffect === 'decode'
+        ? TERMINAL
+        : ['#34d399', '#2aaa74', '#6ee7b7', '#ffffff', '#e0f0ff'];
 
     const count = 6 + (Math.random() * 4 | 0);
     for (let i = 0; i < count; i++) {
@@ -790,9 +815,9 @@ function spawnXianxiaParticles(contentEl) {
     ring.addEventListener('animationend', () => ring.remove(), { once: true });
 }
 
-// Apply xianxia character-seal animation to a rendered bot message element
+// Seal effect: each char glows gold→jade→normal with staggered delay
 function applyXianxiaEffect(container) {
-    if (!settings.xianxiaEffect) return;
+    if (settings.xianxiaEffect !== 'seal') return;
 
     const MAX_CHARS = 700;
     const CHAR_DELAY_MS = 7;
@@ -832,6 +857,80 @@ function applyXianxiaEffect(container) {
     }, cleanup);
 }
 
+// Decode scan: scramble all chars with random Latin, then reveal left→right
+function applyDecodeEffect(container) {
+    if (settings.xianxiaEffect !== 'decode') return;
+
+    const SCAN_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*?<>/\\|{}[]';
+    const TICK_MS = 26;
+    const BEAM_WIDTH = 10;
+    const TOTAL_MS = 2400; // target total duration
+
+    // Collect non-whitespace chars as spans, leave whitespace as text nodes
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    let n;
+    while ((n = walker.nextNode())) textNodes.push(n);
+
+    const chars = [];
+    for (const tNode of textNodes) {
+        const text = tNode.textContent;
+        const frag = document.createDocumentFragment();
+        for (const ch of text) {
+            if (!ch.trim()) {
+                frag.appendChild(document.createTextNode(ch));
+            } else {
+                const sp = document.createElement('span');
+                sp.className = 'xdecode-scanning';
+                sp.textContent = SCAN_CHARS[Math.random() * SCAN_CHARS.length | 0];
+                sp.dataset.r = ch;
+                frag.appendChild(sp);
+                chars.push(sp);
+            }
+        }
+        tNode.parentNode.replaceChild(frag, tNode);
+    }
+
+    if (!chars.length) return;
+
+    const ticks = Math.ceil(TOTAL_MS / TICK_MS);
+    const charsPerTick = Math.max(1, Math.ceil(chars.length / ticks));
+    let front = 0;
+    let tid;
+
+    const tick = () => {
+        // Scramble beam region ahead
+        for (let i = front; i < Math.min(front + BEAM_WIDTH, chars.length); i++) {
+            chars[i].textContent = SCAN_CHARS[Math.random() * SCAN_CHARS.length | 0];
+        }
+        // Settle chars behind beam
+        for (let i = Math.max(0, front - charsPerTick); i < front; i++) {
+            chars[i].textContent = chars[i].dataset.r;
+            chars[i].className = 'xdecode-settled';
+        }
+        front += charsPerTick;
+
+        if (front < chars.length + BEAM_WIDTH) {
+            tid = setTimeout(tick, TICK_MS);
+        } else {
+            // Ensure all revealed
+            for (const sp of chars) {
+                sp.textContent = sp.dataset.r;
+                if (sp.className === 'xdecode-scanning') sp.className = 'xdecode-settled';
+            }
+            // Clean up spans after settle animation finishes
+            setTimeout(() => {
+                container.querySelectorAll('.xdecode-settled, .xdecode-scanning').forEach(sp => {
+                    if (sp.parentNode) sp.parentNode.replaceChild(document.createTextNode(sp.textContent), sp);
+                });
+                container.normalize();
+            }, 700);
+        }
+    };
+
+    tid = setTimeout(tick, 60); // small delay after final render
+}
+
 async function getBotResponse(userMessage) {
     isAwaitingResponse = true;
     sendBtn.disabled = true;
@@ -842,6 +941,85 @@ async function getBotResponse(userMessage) {
     let errorMessage = null;
     let lowConfidence = false;
     let regenerated = false;
+
+    // Decode-mode streaming state
+    let isStreamingForDecode = true;
+    let _xDecodeScrambled = '';
+    let _xDecodeSettledLen = 0;
+    let _xDecodeTimer = null;
+    let _xDecodeFinalContent = null;
+    const _DECODE_TICK_MS = 34;
+    const _DECODE_CPS = 1;      // chars revealed per tick while streaming
+    const _DECODE_BEAM = 8;     // beam width (re-scrambled each tick)
+    const _DECODE_TRAIL = 24;   // keep tail chars encrypted while streaming
+    const _SCAN_S = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%*?';
+    const _esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const _escDecode = s => _esc(s).replace(/\n/g, '<br>');
+
+    const resetDecodeState = () => {
+        if (_xDecodeTimer) {
+            clearInterval(_xDecodeTimer);
+            _xDecodeTimer = null;
+        }
+        _xDecodeScrambled = '';
+        _xDecodeSettledLen = 0;
+        _xDecodeFinalContent = null;
+    };
+
+    const syncDecodeBuffer = (text) => {
+        if (text.length < _xDecodeScrambled.length) {
+            _xDecodeScrambled = scrambleText(text);
+            _xDecodeSettledLen = Math.min(_xDecodeSettledLen, text.length);
+        } else if (text.length > _xDecodeScrambled.length) {
+            _xDecodeScrambled += scrambleText(text.slice(_xDecodeScrambled.length));
+        }
+    };
+
+    const startDecodeTicker = (contentEl) => {
+        if (_xDecodeTimer) return;
+        _xDecodeTimer = setInterval(() => {
+            const src = _xDecodeFinalContent || accumulated;
+            syncDecodeBuffer(src);
+
+            // Re-scramble the beam region
+            for (let i = _xDecodeSettledLen; i < Math.min(_xDecodeSettledLen + _DECODE_BEAM, _xDecodeScrambled.length); i++) {
+                const ch = src[i];
+                if (ch && ch.trim()) {
+                    _xDecodeScrambled = _xDecodeScrambled.slice(0, i) +
+                        _SCAN_S[Math.random() * _SCAN_S.length | 0] +
+                        _xDecodeScrambled.slice(i + 1);
+                }
+            }
+            // Advance the settled frontier
+            const prev = _xDecodeSettledLen;
+            const targetLen = isStreamingForDecode
+                ? Math.max(0, _xDecodeScrambled.length - _DECODE_TRAIL)
+                : _xDecodeScrambled.length;
+            if (_xDecodeSettledLen < targetLen) {
+                const revealStep = isStreamingForDecode
+                    ? _DECODE_CPS
+                    : Math.min(Math.max(Math.ceil((targetLen - _xDecodeSettledLen) / 80), 2), 14);
+                _xDecodeSettledLen = Math.min(_xDecodeSettledLen + revealStep, targetLen);
+            }
+            // Render: settled (real) + beam (scrambled) + pending (scrambled)
+            const settled = src.slice(0, _xDecodeSettledLen);
+            const beam    = _xDecodeScrambled.slice(_xDecodeSettledLen, _xDecodeSettledLen + _DECODE_BEAM);
+            const pending = _xDecodeScrambled.slice(_xDecodeSettledLen + _DECODE_BEAM);
+            const wasAtBottom = isNearBottom();
+            contentEl.innerHTML =
+                _escDecode(settled) +
+                (beam    ? `<span class="xdecode-scanning">${_escDecode(beam)}</span>`    : '') +
+                (pending ? `<span class="xdecode-pending">${_escDecode(pending)}</span>` : '');
+            if (wasAtBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
+            if (prev < _xDecodeSettledLen) spawnXianxiaParticles(contentEl);
+            // Stop when fully settled and stream is done
+            if (_xDecodeSettledLen >= _xDecodeScrambled.length && !isStreamingForDecode) {
+                clearInterval(_xDecodeTimer);
+                _xDecodeTimer = null;
+                contentEl.innerHTML = formatMessageBody(_xDecodeFinalContent || accumulated);
+            }
+        }, _DECODE_TICK_MS);
+    };
 
     const ensurePlaceholder = () => {
         if (placeholder) return placeholder;
@@ -855,7 +1033,6 @@ async function getBotResponse(userMessage) {
         wrapper.innerHTML = createMessageHTML(botMessage);
         placeholder = wrapper.firstElementChild;
         messagesArea.appendChild(placeholder);
-        if (settings.xianxiaEffect) placeholder.classList.add('xianxia-streaming');
         return placeholder;
     };
 
@@ -870,13 +1047,17 @@ async function getBotResponse(userMessage) {
             || target.querySelector('.message-content p')
             || target.querySelector('.message-content');
         const wasAtBottom = isNearBottom();
+        if (settings.xianxiaEffect === 'decode' && isStreamingForDecode) {
+            // Only update scramble buffer; ticker owns the DOM
+            syncDecodeBuffer(text);
+            if (contentEl) startDecodeTicker(contentEl);
+            return;
+        }
         if (contentEl) {
             contentEl.innerHTML = formatMessageBody(text);
             spawnXianxiaParticles(contentEl);
         }
-        if (wasAtBottom) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+        if (wasAtBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
     };
 
     try {
@@ -922,6 +1103,7 @@ async function getBotResponse(userMessage) {
                 if (event.regenerating) {
                     regenerated = true;
                     accumulated = '';
+                    resetDecodeState();
                     renderInto('_Đang viết lại với độ chính xác cao hơn…_');
                     continue;
                 }
@@ -947,11 +1129,22 @@ async function getBotResponse(userMessage) {
         if (lowConfidence) {
             finalContent += '\n\n> ⚠️ **Lưu ý:** câu trả lời này có độ tin cậy thấp so với dữ liệu trong kho. Vui lòng đối chiếu thêm với nhân viên hoặc trang sản phẩm.';
         }
-        renderInto(finalContent);
-        if (placeholder) {
-            placeholder.classList.remove('xianxia-streaming');
-            const contentEl = placeholder.querySelector('.message-markdown');
-            if (contentEl) applyXianxiaEffect(contentEl);
+        isStreamingForDecode = false;
+        if (settings.xianxiaEffect === 'decode') {
+            _xDecodeFinalContent = finalContent;
+            syncDecodeBuffer(finalContent);
+            // Ensure ticker is running to finish decoding
+            const contentEl = ensurePlaceholder().querySelector('.message-markdown');
+            if (contentEl) startDecodeTicker(contentEl);
+        } else {
+            renderInto(finalContent);
+            if (placeholder) {
+                const contentEl = placeholder.querySelector('.message-markdown');
+                if (contentEl) {
+                    applyXianxiaEffect(contentEl);
+                    applyDecodeEffect(contentEl);
+                }
+            }
         }
 
         const chat = chats.find(c => c.id === currentChatId);
@@ -967,6 +1160,8 @@ async function getBotResponse(userMessage) {
             renderChatHistory();
         }
     } catch (error) {
+        isStreamingForDecode = false;
+        resetDecodeState();
         const text = `Sorry, the chatbot could not answer right now.\n\n${error.message}`;
         renderInto(text);
         const chat = chats.find(c => c.id === currentChatId);
@@ -981,7 +1176,6 @@ async function getBotResponse(userMessage) {
             renderChatHistory();
         }
     } finally {
-        if (placeholder) placeholder.classList.remove('xianxia-streaming');
         hideTypingIndicator();
         isAwaitingResponse = false;
         sendBtn.disabled = false;
@@ -1030,7 +1224,7 @@ function hideDeleteModal() {
 // Delete chat
 async function deleteChat(chatId) {
     chats = chats.filter(c => c.id !== chatId);
-    localStorage.setItem('techChatHistory', JSON.stringify(chats));
+    localStorage.setItem(chatHistoryStorageKey, JSON.stringify(chats));
     await deleteServerChat(chatId);
     renderChatHistory();
     

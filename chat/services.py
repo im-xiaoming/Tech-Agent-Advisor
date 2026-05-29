@@ -8,6 +8,30 @@ import time
 logger = logging.getLogger(__name__)
 
 
+_PROMPT_LEAK_MARKERS = (
+    "SYSTEM PROMPT",
+    "OUTPUT REQUIREMENTS",
+    "CONTEXT",
+    "QUESTION:",
+    "Trả lời:",
+    "Yêu cầu:",
+    "Hướng dẫn",
+)
+_PROMPT_LEAK_FALLBACK = (
+    "Mình chưa có đủ dữ liệu trong kho để trả lời chính xác. "
+    "Bạn có thể cho mình thêm nhu cầu như ngân sách, hãng ưu tiên hoặc kiểu tai nghe không?"
+)
+
+
+def _looks_like_prompt_leak(text: str) -> bool:
+    normalized = text.lower()
+    if normalized.count("yêu cầu:") >= 2:
+        return True
+    if normalized.count("context") >= 2:
+        return True
+    return any(marker.lower() in normalized for marker in _PROMPT_LEAK_MARKERS)
+
+
 def _sse(event: dict) -> str:
     """Serialize one event payload using the SSE data format."""
     return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
@@ -89,6 +113,8 @@ def stream_chat(query: str, history: str = "", user=None, session_id: str = ""):
     full_answer = ""
     streamed_sources: list = []
     error: str | None = None
+    pending_tokens: list[str] = []
+    prompt_leak_blocked = False
 
     try:
         from rag_engine.rag.pipeline import ask_stream
@@ -111,9 +137,31 @@ def stream_chat(query: str, history: str = "", user=None, session_id: str = ""):
                 if not token:
                     continue
                 full_answer += token
-                yield _sse({"token": token})
+                if _looks_like_prompt_leak(full_answer):
+                    prompt_leak_blocked = True
+                    full_answer = _PROMPT_LEAK_FALLBACK
+                    final_state = {
+                        **final_state,
+                        "answer": full_answer,
+                        "sources": streamed_sources,
+                        "error": "Prompt leak blocked.",
+                    }
+                    yield _sse({"regenerating": True, "reason": "prompt_leak_blocked"})
+                    yield _sse({"token": full_answer})
+                    break
+
+                if pending_tokens is not None:
+                    pending_tokens.append(token)
+                    if len("".join(pending_tokens)) < 160:
+                        continue
+                    yield _sse({"token": "".join(pending_tokens)})
+                    pending_tokens = None
+                else:
+                    yield _sse({"token": token})
             elif "final" in event:
                 final_state = event["final"] or {}
+        if pending_tokens and not prompt_leak_blocked:
+            yield _sse({"token": "".join(pending_tokens)})
     except Exception as exc:
         logger.exception("Chat request failed.")
         error = str(exc)

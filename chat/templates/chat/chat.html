@@ -69,6 +69,7 @@
             data-chat-api-url="{{ chat_api_url }}"
             data-chat-history-url="{{ chat_history_url }}"
             data-chat-history-clear-url="{{ chat_history_clear_url }}"
+            data-user-id="{{ request.user.id }}"
         >
             {% csrf_token %}
             <button class="desktop-open-sidebar" id="desktopOpenSidebar" title="Open sidebar">
@@ -266,13 +267,14 @@
                     </div>
                     <div class="setting-item">
                         <div class="setting-info">
-                            <span class="setting-label">Hiệu ứng Tu Tiên</span>
-                            <span class="setting-description">Kí tự hiện ra cùng linh khí kim–ngọc khi Thiên Vấn hồi đáp</span>
+                            <span class="setting-label">Hiệu ứng kí tự</span>
+                            <span class="setting-description">Hiệu ứng xuất hiện khi Thiên Vấn hồi đáp</span>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="xianxiaToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
+                        <select id="xianxiaSelect" class="setting-select">
+                            <option value="off">Tắt</option>
+                            <option value="seal" selected>Tu Tiên</option>
+                            <option value="decode">Giải mã</option>
+                        </select>
                     </div>
                 </div>
                 

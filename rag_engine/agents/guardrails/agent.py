@@ -10,5 +10,3 @@ NO_CONTEXT_ANSWER = (
 def no_context_guardrail_agent(state: AgentState) -> AgentState:
     """Answer with a default message when no relevant context is found."""
     return {**state, "answer": NO_CONTEXT_ANSWER, "error": "No retrieved context."}
-
-

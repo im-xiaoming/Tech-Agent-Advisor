@@ -183,7 +183,6 @@ body {
     border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.2s;
-    group: true;
 }
 
 .history-item:hover {
@@ -201,15 +200,22 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+    min-width: 0;
 }
 
 .history-item-actions {
-    display: none;
+    display: flex;
     gap: 4px;
+    flex: 0 0 28px;
+    justify-content: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
 }
 
 .history-item:hover .history-item-actions {
-    display: flex;
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .history-action-btn {
@@ -1210,11 +1216,17 @@ body {
 :root {
     --xianxia-gold: #c8962a;
     --xianxia-jade: #2aaa74;
+    --terminal-green: #00c853;
+    --terminal-green-dim: #008f3a;
+    --terminal-green-soft: rgba(0, 200, 83, 0.35);
 }
 
 [data-theme="dark"] {
     --xianxia-gold: #f5c842;
     --xianxia-jade: #34d399;
+    --terminal-green: #39ff14;
+    --terminal-green-dim: #00c853;
+    --terminal-green-soft: rgba(57, 255, 20, 0.38);
 }
 
 @keyframes xianxia-char-seal {
@@ -1246,9 +1258,27 @@ body {
     animation: xianxia-char-seal 0.9s ease-out forwards;
 }
 
-.xianxia-streaming {
-    border-radius: 6px;
-    animation: xianxia-aura-pulse 1.8s ease-in-out infinite;
+/* Decode scan on completion */
+@keyframes xdecode-settle {
+    0%   { color: var(--terminal-green); text-shadow: 0 0 8px var(--terminal-green), 0 0 18px var(--terminal-green); }
+    60%  { color: var(--terminal-green-dim); text-shadow: 0 0 4px var(--terminal-green); }
+    100% { color: inherit; text-shadow: none; }
+}
+
+.xdecode-scanning {
+    color: var(--terminal-green);
+    text-shadow: 0 0 5px var(--terminal-green), 0 0 12px var(--terminal-green);
+    opacity: 0.86;
+}
+
+.xdecode-pending {
+    color: var(--terminal-green-dim);
+    opacity: 0.55;
+    text-shadow: 0 0 5px var(--terminal-green-soft);
+}
+
+.xdecode-settled {
+    animation: xdecode-settle 0.55s ease-out forwards;
 }
 
 /* Particle burst on each token */
@@ -1277,7 +1307,7 @@ body {
 
 .xianxia-ring {
     position: fixed;
-    border: 2px solid #f5c842;
+    border: 2px solid var(--terminal-green);
     border-radius: 50%;
     pointer-events: none;
     z-index: 9998;
