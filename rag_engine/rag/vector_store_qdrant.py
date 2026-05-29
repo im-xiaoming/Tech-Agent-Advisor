@@ -11,6 +11,32 @@ from rag_engine.core.embedding import get_embeddings
 DENSE_VECTOR_NAME = "dense"
 SPARSE_VECTOR_NAME = "sparse"
 
+# Payload indexes required for self-query metadata filtering. Qdrant rejects
+# Filter conditions on fields that don't have an index; we ensure them on both
+# new collections and pre-existing ones at load time.
+_PAYLOAD_INDEXES: tuple[tuple[str, "qmodels.PayloadSchemaType"], ...] = (
+    ("metadata.price", qmodels.PayloadSchemaType.FLOAT),
+    ("metadata.ram_gb", qmodels.PayloadSchemaType.FLOAT),
+    ("metadata.storage_gb", qmodels.PayloadSchemaType.FLOAT),
+    ("metadata.battery_mah", qmodels.PayloadSchemaType.FLOAT),
+    ("metadata.brand", qmodels.PayloadSchemaType.TEXT),
+)
+
+
+def _ensure_payload_indexes(client: QdrantClient, name: str) -> None:
+    """Create payload indexes for filter fields. Idempotent."""
+    for field, schema in _PAYLOAD_INDEXES:
+        try:
+            client.create_payload_index(
+                collection_name=name,
+                field_name=field,
+                field_schema=schema,
+            )
+        except Exception:
+            # Already exists, or the field has heterogeneous types in old data
+            # — log and continue. Filter will fall back to no-filter at search.
+            pass
+
 
 def _get_client() -> QdrantClient:
     """Initialize a Qdrant client pointing to Qdrant Cloud."""
@@ -99,6 +125,7 @@ def create_qdrant_db(chunks, collection_name: str | None = None):
     name = collection_name or settings.qdrant_collection
     client = _get_client()
     _recreate_collection(client, name, _embedding_dim())
+    _ensure_payload_indexes(client, name)
 
     store = _build_vector_store(client, name)
 
@@ -122,6 +149,7 @@ def load_qdrant_db(collection_name: str | None = None):
     if name not in _collection_names(client):
         raise ValueError(f"Qdrant collection '{name}' not found.")
 
+    _ensure_payload_indexes(client, name)
     return _build_vector_store(client, name)
 
 

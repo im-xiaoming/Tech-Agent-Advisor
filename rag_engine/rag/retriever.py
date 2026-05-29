@@ -1,5 +1,9 @@
+import logging
+
 from rag_engine.core.config import settings
 from rag_engine.rag.tools import build_qdrant_filter
+
+logger = logging.getLogger(__name__)
 
 
 def retrieve(
@@ -18,7 +22,8 @@ def retrieve(
     ``filters`` is an LLM-extracted constraint dict (brand, price_max, ram_min…)
     converted to a Qdrant Filter and applied server-side before similarity
     scoring — narrows the candidate pool to docs that match the user's stated
-    requirements.
+    requirements. If Qdrant rejects the filter (e.g. missing payload index) the
+    search is retried without it so chat still works.
     """
     threshold = score_threshold if score_threshold is not None else settings.score_threshold
     qdrant_filter = build_qdrant_filter(filters)
@@ -29,4 +34,11 @@ def retrieve(
     if qdrant_filter is not None:
         kwargs["filter"] = qdrant_filter
 
-    return db.similarity_search(query, **kwargs)
+    try:
+        return db.similarity_search(query, **kwargs)
+    except Exception as exc:
+        if qdrant_filter is None:
+            raise
+        logger.warning("Qdrant filter rejected (%s) — retrying without filter.", exc)
+        kwargs.pop("filter", None)
+        return db.similarity_search(query, **kwargs)

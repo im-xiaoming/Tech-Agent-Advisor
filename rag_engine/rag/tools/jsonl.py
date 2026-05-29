@@ -95,9 +95,9 @@ def _camera_features(rear_camera: str, front_camera: str) -> dict:
         camera_score += 12
 
     return {
-        "rear_camera_mp": rear_mp or "",
-        "front_camera_mp": front_mp or "",
-        "camera_aperture": best_aperture or "",
+        "rear_camera_mp": rear_mp,
+        "front_camera_mp": front_mp,
+        "camera_aperture": best_aperture,
         "has_ois": has_ois,
         "has_telephoto": has_telephoto,
         "has_ultrawide": has_ultrawide,
@@ -123,12 +123,14 @@ def _structured_features(record: dict) -> dict:
 
     performance_score = min(float(ram or 0), 16) * 1.5
 
+    # Use None (not "") for missing numeric fields so Qdrant numeric payload
+    # indexes don't choke on mixed-type values.
     return {
         "chipset": chipset,
-        "ram_gb": ram or "",
-        "storage_gb": storage or "",
-        "battery_mah": battery or "",
-        "performance_score": round(performance_score, 2) if performance_score else "",
+        "ram_gb": ram,
+        "storage_gb": storage,
+        "battery_mah": battery,
+        "performance_score": round(performance_score, 2) if performance_score else None,
         **camera_features,
     }
 
@@ -238,7 +240,7 @@ class JSONLoader(BaseLoader):
             "line_number": line_number,
             "title": _clean_text(record.get("title") or "Unknown product"),
             "brand": _clean_text(record.get("brand") or ""),
-            "price": record.get("price") or "",
+            "price": record.get("price") if isinstance(record.get("price"), (int, float)) else None,
             "scraped_at": str(record.get("scraped_at") or ""),
             **_structured_features(record),
         }

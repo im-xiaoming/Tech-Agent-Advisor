@@ -156,24 +156,24 @@ def classify_and_rewrite(query: str, history: str = "") -> dict:
     HISTORY:
     {history}
 
-    NHIỆM VỤ:
-    1. Phân loại câu hỏi vào MỘT trong: smalltalk, product_advice, invalid.
-       - smalltalk: chào hỏi, cảm ơn, tạm biệt, trò chuyện phiếm.
-       - product_advice: hỏi/so sánh/tư vấn về sản phẩm công nghệ (điện thoại, laptop, PC, linh kiện, giá, cấu hình, camera, pin, hiệu năng…).
-       - invalid: rỗng hoặc hoàn toàn không liên quan.
-    2. Viết lại câu hỏi NGẮN, RÕ, giàu từ khóa cho tìm kiếm sản phẩm, tối đa 25 từ, giữ nguyên ý.
-       - Nếu intent KHÔNG phải product_advice: copy nguyên văn câu hỏi gốc.
-    3. Trích xuất "filters" — các ràng buộc người dùng nêu rõ. CHỈ điền field nào người dùng nói rõ; field không nói rõ KHÔNG đưa vào.
-       - brand (chuỗi): hãng/thương hiệu, vd. "Apple", "Samsung", "Xiaomi", "Oppo", "Vivo", "Realme", "Asus".
-       - price_min, price_max (số VND): "dưới 20 triệu" → price_max=20000000; "10-15 triệu" → price_min=10000000, price_max=15000000; "trên 30 triệu" → price_min=30000000.
-       - ram_min (số GB): "RAM 8GB trở lên" → ram_min=8.
-       - storage_min (số GB): "256GB" → storage_min=256.
-       - battery_min (số mAh): "pin 5000 mAh trở lên" → battery_min=5000.
+    TASK:
+    1. Base on HISTORY and current QUERY, classify the user question into EXACTLY ONE of: smalltalk, product_advice, invalid. NOTE: some queries are additional information for previous query.
+       - smalltalk: greetings, thanks, farewells, or casual conversation.
+       - product_advice: asks about, compares, or requests advice on technology products such as phones, laptops, PCs, components, prices, specifications, cameras, batteries, or performance.
+       - invalid: empty or completely unrelated.
+    2. Rewrite the question as a SHORT, CLEAR, keyword-rich product-search query, at most 25 words, preserving the original meaning.
+       - If the intent is NOT product_advice, copy the original question verbatim.
+    3. Extract "filters": constraints the user states explicitly. ONLY fill fields the user clearly mentions; omit fields that are not clearly mentioned.
+       - brand (string): manufacturer or brand, e.g. "Apple", "Samsung", "Xiaomi", "Oppo", "Vivo", "Realme", "Asus".
+       - price_min, price_max (number, VND): "under 20 million VND" means price_max=20000000; "10-15 million VND" means price_min=10000000 and price_max=15000000; "above 30 million VND" means price_min=30000000.
+       - ram_min (number, GB): "RAM 8GB or more" means ram_min=8.
+       - storage_min (number, GB): "256GB" means storage_min=256.
+       - battery_min (number, mAh): "battery 5000 mAh or more" means battery_min=5000.
 
-    YÊU CẦU OUTPUT:
-    - CHỈ trả về MỘT JSON object hợp lệ, KHÔNG markdown, KHÔNG giải thích, KHÔNG xuống dòng thừa.
+    OUTPUT REQUIREMENTS:
+    - Return ONLY ONE valid JSON object, with NO markdown, NO explanation, and NO extra line breaks.
     - Schema: {{"intent": "smalltalk"|"product_advice"|"invalid", "rewritten": "...", "filters": {{...}}}}
-    - "filters" có thể là object rỗng {{}} nếu không có ràng buộc nào.
+    - "filters" may be an empty object {{}} if there are no constraints.
     """
     fallback = {"intent": "product_advice", "rewritten": query, "filters": {}}
 
@@ -231,16 +231,16 @@ def rewrite_query_for_retrieval(query: str, history: str = "") -> str:
     Returns the rewritten query, or the original query unchanged on failure.
     """
     system_prompt = f"""
-    Lịch sử trò chuyện:
+    Conversation history:
     {history}
 
     SYSTEM PROMPT:
-    Dựa vào lịch sử trò chuyện và câu hỏi của người dùng, hãy viết lại câu hỏi này thành MỘT câu truy vấn ngắn gọn, rõ ràng, giàu từ khóa, để tìm kiếm tài liệu sản phẩm.
+    Based on the conversation history and the user's question, rewrite the question into ONE short, clear, keyword-rich query for searching product documents.
 
-    YÊU CẦU OUTPUT:
-    - CHỈ trả về duy nhất câu truy vấn đã viết lại, không thêm giải thích, không xuống dòng, không markdown, không đặt trong dấu ngoặc.
-    - Giữ nguyên ý nghĩa câu hỏi gốc.
-    - Tối đa 25 từ.
+    OUTPUT REQUIREMENTS:
+    - Return ONLY the rewritten query, with no explanation, no line breaks, no markdown, and no surrounding quotes.
+    - Preserve the original meaning of the question.
+    - Use at most 25 words.
     """
     try:
         raw = generate_response(system_prompt, query, temperature=0.1)
@@ -263,14 +263,14 @@ def classify_intent(query: str, history: str = "") -> str:
     {history}
 
     SYSTEM PROMPT:
-    Phân loại câu hỏi của người dùng vào ĐÚNG MỘT trong ba nhãn:
-    - smalltalk: chào hỏi, cảm ơn, trò chuyện phiếm.
-    - product_advice: hỏi/so sánh/tư vấn về sản phẩm (điện thoại, cấu hình, giá, camera, pin, hiệu năng chơi game, v.v.).
-    - invalid: câu rỗng hoặc hoàn toàn không liên quan đến hai loại trên.
+    Classify the user's question into EXACTLY ONE of these labels:
+    - smalltalk: greetings, thanks, or casual conversation.
+    - product_advice: asks about, compares, or requests advice on products such as phones, specifications, prices, cameras, batteries, or gaming performance.
+    - invalid: empty or completely unrelated to the two categories above.
 
-    YÊU CẦU OUTPUT:
-    - CHỈ trả về duy nhất một từ trong: smalltalk | product_advice | invalid
-    - Không giải thích, không thêm dấu câu, không xuống dòng.
+    OUTPUT REQUIREMENTS:
+    - Return ONLY one word from: smalltalk | product_advice | invalid
+    - Do not explain, do not add punctuation, and do not add a line break.
     """
     try:
         raw = generate_response(system_prompt, query, temperature=0.0)
@@ -303,7 +303,7 @@ def summarize_history(history: str, reasoning: bool = False) -> str:
 
     system_prompt = f"""
     SYSTEM PROMPT:
-    Hãy tóm tắt đoạn lịch sử trò chuyện sau đây một cách ngắn gọn và dễ hiểu hơn, đồng thời giữ nguyên ý nghĩa chính của nó:
+    Summarize the following conversation history in a concise and easy-to-understand way while preserving its main meaning:
     """
     
     return generate_response(system_prompt, history, temperature=0.1, reasoning=reasoning)

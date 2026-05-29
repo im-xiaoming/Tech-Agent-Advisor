@@ -9,7 +9,16 @@
     <link rel="stylesheet" href="{% static 'landing/css/landing.css' %}">
 </head>
 <body>
-    <main class="landing-page" style="--landing-image: url('{% static 'landing/images/landing.jpg' %}');">
+    <main class="landing-page video-theme-1" data-active-video="1">
+        <video class="landing-video is-active" data-video-index="1" autoplay muted playsinline preload="auto" aria-hidden="true">
+            <source src="{% static 'landing/video/video1.mp4' %}" type="video/mp4">
+        </video>
+        <video class="landing-video" data-video-index="2" muted playsinline preload="auto" aria-hidden="true">
+            <source src="{% static 'landing/video/video2.mp4' %}" type="video/mp4">
+        </video>
+        <div class="video-wash" aria-hidden="true"></div>
+
+        <canvas class="three-canvas" id="threeCanvas" aria-hidden="true"></canvas>
         <canvas class="aura-canvas" id="auraCanvas" aria-hidden="true"></canvas>
 
         <div class="celestial-depth" aria-hidden="true">
@@ -34,8 +43,8 @@
                 Linh pháp khai môn, thiên vấn tri kiến, tinh hà chiếu giám, phù vân nhập cảnh.
             </p>
             <a class="enter-chat" href="{{ chat_url }}" data-transition-link>
-                <span>Nhập Môn Vấn Đạo</span>
-                <i aria-hidden="true"></i>
+                <span>Vấn Đạo</span>
+                {% comment %} <i aria-hidden="true"></i> {% endcomment %}
             </a>
         </section>
 
@@ -54,6 +63,7 @@
         </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
     <script src="{% static 'landing/js/landing.js' %}"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@ from chat.services import stream_chat
 
 
 def _build_history_context(histories) -> str:
-    """Build prompt history from old summarized turns plus recent raw turns."""
+    """Build prompt history from old summarized turns + recent raw turns."""
     if not histories:
         return ""
 

@@ -45,7 +45,11 @@ class Settings:
     # chunking settings from config.yaml
     chunk_size: int = config["chunking"]["chunk_size"]
     chunk_overlap: int = config["chunking"]["chunk_overlap"]
+    
+    # retriever
     score_threshold: float = config["retriever"]["score_threshold"]
+    
+    # search
     hybrid_enabled: bool = config.get("retriever", {}).get("hybrid_enabled", False)
     sparse_model: str = config.get("retriever", {}).get("sparse_model", "Qdrant/bm25")
     self_query_enabled: bool = config.get("retriever", {}).get("self_query_enabled", True)

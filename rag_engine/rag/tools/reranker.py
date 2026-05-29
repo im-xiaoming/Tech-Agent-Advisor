@@ -65,12 +65,7 @@ class Reranker:
             scores = self._torch.sigmoid(logits)
             return scores.cpu().tolist()
 
-    def rerank(
-        self,
-        query: str,
-        documents: list[Document],
-        top_n: int | None = None,
-    ) -> list[Document]:
+    def rerank(self, query: str, documents: list[Document], top_n: int | None = None) -> list[Document]:
         if not documents:
             return []
         scores = self.score(query, (doc.page_content for doc in documents))
@@ -88,10 +83,6 @@ def _default_reranker() -> Reranker:
     return Reranker()
 
 
-def rerank_documents(
-    query: str,
-    documents: list[Document],
-    top_n: int | None = None,
-) -> list[Document]:
+def rerank_documents(query: str, documents: list[Document], top_n: int | None = None) -> list[Document]:
     """Re-rank ``documents`` against ``query`` using the configured model."""
     return _default_reranker().rerank(query, documents, top_n=top_n)
