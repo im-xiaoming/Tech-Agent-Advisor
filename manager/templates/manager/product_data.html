@@ -1,0 +1,228 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Dữ liệu sản phẩm</title>
+    <link rel="stylesheet" href="{% static 'manager/css/manager.css' %}">
+    <style>
+        .data-summary {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 0 0 18px;
+            color: #4b5563;
+            font-size: 14px;
+        }
+
+        .filters {
+            display: flex;
+            align-items: end;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+
+        .filters label {
+            min-width: 220px;
+        }
+
+        .filters input,
+        .filters select {
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .filters button,
+        .filters a {
+            min-height: 40px;
+            padding: 8px 12px;
+            color: #111827;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font: inherit;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .data-table {
+            width: 100%;
+            margin-top: 1rem;
+            border-collapse: collapse;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            color: #374151;
+            background: #f3f4f6;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .data-table tr:hover td {
+            background: #f9fafb;
+        }
+
+        .truncate {
+            max-width: 320px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .description {
+            max-width: 420px;
+            color: #4b5563;
+        }
+
+        .price {
+            white-space: nowrap;
+            font-weight: 700;
+        }
+
+        .source-link {
+            color: #2563eb;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .pagination a {
+            padding: 7px 10px;
+            color: #111827;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        @media (max-width: 900px) {
+            .data-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="manager-page">
+    <header class="manager-header">
+        <div>
+            <p class="eyebrow">Admin manager</p>
+            <h1>Dữ liệu sản phẩm</h1>
+            <p class="path">{{ data_path }}</p>
+        </div>
+        <nav class="manager-actions">
+            <a href="{% url 'manager-config' %}">Config</a>
+            <a href="{% url 'manager-log-list' %}">Chat logs</a>
+            <a href="{% url 'admin:index' %}">Django admin</a>
+            <a href="{% url 'chat-view' %}">Chatbot</a>
+        </nav>
+    </header>
+
+    <div class="data-summary">
+        <span>Tổng dữ liệu: <strong>{{ total_records }}</strong></span>
+        <span>Đang hiển thị: <strong>{{ page_obj.paginator.count }}</strong></span>
+        <span>Mỗi trang: <strong>25</strong></span>
+    </div>
+
+    <form method="get" class="filters">
+        <label>
+            <span>Tìm kiếm</span>
+            <input type="text" name="q" value="{{ current_search }}" placeholder="Tên, hãng, mô tả, thông số...">
+        </label>
+        <label>
+            <span>Hãng</span>
+            <select name="brand">
+                <option value="">Tất cả</option>
+                {% for brand in brands %}
+                    <option value="{{ brand }}" {% if brand == current_brand %}selected{% endif %}>{{ brand }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit">Lọc</button>
+        <a href="{% url 'manager-product-data' %}">Xóa lọc</a>
+    </form>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Dòng</th>
+                <th>Sản phẩm</th>
+                <th>Hãng</th>
+                <th>Giá</th>
+                <th>Rating</th>
+                <th>Mô tả</th>
+                <th>Nguồn</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in page_obj %}
+                <tr>
+                    <td>#{{ item.line_number_display }}</td>
+                    <td class="truncate" title="{{ item.title }}">{{ item.title|default:"-" }}</td>
+                    <td>{{ item.brand|default:"-" }}</td>
+                    <td class="price">
+                        {% if item.price %}
+                            {{ item.price }} VND
+                        {% elif item.price_raw %}
+                            {{ item.price_raw }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ item.rating|default:"-" }}</td>
+                    <td class="description">{{ item.description|default:item.text|truncatechars:220 }}</td>
+                    <td>
+                        {% if item.url %}
+                            <a class="source-link" href="{{ item.url }}" target="_blank" rel="noopener">Mở</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" style="padding: 2rem; text-align: center;">Không tìm thấy dữ liệu phù hợp.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?{% if current_search %}q={{ current_search|urlencode }}&{% endif %}{% if current_brand %}brand={{ current_brand|urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">‹ Trước</a>
+        {% endif %}
+        <span>Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} dòng)</span>
+        {% if page_obj.has_next %}
+            <a href="?{% if current_search %}q={{ current_search|urlencode }}&{% endif %}{% if current_brand %}brand={{ current_brand|urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">Sau ›</a>
+        {% endif %}
+    </div>
+</main>
+</body>
+</html>

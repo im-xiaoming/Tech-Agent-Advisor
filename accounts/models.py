@@ -11,6 +11,9 @@ class ChatConversation(models.Model):
     client_id = models.CharField(max_length=80)
     title = models.CharField(max_length=255)
     messages = models.JSONField(default=list, blank=True)
+    summary = models.TextField(blank=True, default="")
+    summary_message_count = models.PositiveIntegerField(default=0)
+    summary_updated_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField(auto_now=True)
 

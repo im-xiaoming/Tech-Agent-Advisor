@@ -17,6 +17,8 @@
                 <p class="path">{{ config_path }}</p>
             </div>
             <nav class="manager-actions">
+                <a href="{% url 'manager-product-data' %}">Dữ liệu</a>
+                <a href="{% url 'manager-log-list' %}">Chat logs</a>
                 <a href="{% url 'admin:index' %}">Django admin</a>
                 <a href="{% url 'chat-view' %}">Chatbot</a>
             </nav>

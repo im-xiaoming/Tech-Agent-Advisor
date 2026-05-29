@@ -1,3 +1,4 @@
+import json
 import yaml
 from django.conf import settings
 from django.contrib import messages
@@ -12,6 +13,7 @@ from manager.models import ChatLog
 
 
 CONFIG_PATH = settings.BASE_DIR / ".config" / "config.yaml"
+PRODUCT_DATA_PATH = settings.BASE_DIR / "data" / "cellphones_mobile.jsonl"
 
 
 def _read_config_file():
@@ -33,6 +35,27 @@ def _write_config_file(data):
     CONFIG_PATH.write_text(rendered, encoding="utf-8")
 
 
+def _load_product_records():
+    """Load product records from the local JSONL data file for admin display."""
+    records = []
+    if not PRODUCT_DATA_PATH.exists():
+        return records
+
+    with PRODUCT_DATA_PATH.open("r", encoding="utf-8") as source:
+        for line_number, line in enumerate(source, start=1):
+            if not line.strip():
+                continue
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(item, dict):
+                continue
+            item["line_number_display"] = line_number
+            records.append(item)
+    return records
+
+
 @staff_member_required
 def config_manager(request):
     config_data, raw_yaml = _read_config_file()
@@ -52,6 +75,56 @@ def config_manager(request):
         {
             "form": form,
             "config_path": CONFIG_PATH,
+        },
+    )
+
+
+@staff_member_required
+def product_data_view(request):
+    """Admin-only page for browsing product data loaded from JSONL."""
+    records = _load_product_records()
+
+    search = request.GET.get("q", "").strip()
+    brand = request.GET.get("brand", "").strip()
+
+    if search:
+        needle = search.casefold()
+        records = [
+            item for item in records
+            if needle in " ".join(
+                str(item.get(key, ""))
+                for key in ("title", "brand", "description", "specs", "text", "url")
+            ).casefold()
+        ]
+
+    brands = sorted(
+        {
+            str(item.get("brand", "")).strip()
+            for item in _load_product_records()
+            if str(item.get("brand", "")).strip()
+        },
+        key=str.casefold,
+    )
+
+    if brand:
+        records = [
+            item for item in records
+            if str(item.get("brand", "")).strip().casefold() == brand.casefold()
+        ]
+
+    paginator = Paginator(records, 25)
+    page = paginator.get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "manager/product_data.html",
+        {
+            "page_obj": page,
+            "brands": brands,
+            "current_search": search,
+            "current_brand": brand,
+            "data_path": PRODUCT_DATA_PATH,
+            "total_records": len(_load_product_records()),
         },
     )
 

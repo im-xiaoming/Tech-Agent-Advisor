@@ -29,7 +29,11 @@
 </head>
 <body>
 <main class="manager-page">
-    <a class="back" href="{% url 'manager-log-list' %}">← Quay lại danh sách</a>
+    <nav class="manager-actions" style="margin-bottom: 16px;">
+        <a href="{% url 'manager-log-list' %}">← Chat logs</a>
+        <a href="{% url 'manager-product-data' %}">Dữ liệu</a>
+        <a href="{% url 'manager-config' %}">Config</a>
+    </nav>
     <h1>Chat log #{{ log.id }}</h1>
 
     {% if messages %}

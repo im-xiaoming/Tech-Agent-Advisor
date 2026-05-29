@@ -41,6 +41,12 @@ class Settings:
     qdrant_url: str | None = os.getenv("QDRANT_URL")
     qdrant_api_key: str | None = os.getenv("QDRANT_API_KEY")
     qdrant_collection: str = os.getenv("QDRANT_COLLECTION", "tech_products")
+    qdrant_timeout: int = int(os.getenv("QDRANT_TIMEOUT", "60"))
+    qdrant_prefer_grpc: bool = os.getenv("QDRANT_PREFER_GRPC", "true").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
     
     # chunking settings from config.yaml
     chunk_size: int = config["chunking"]["chunk_size"]

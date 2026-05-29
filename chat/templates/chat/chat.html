@@ -186,6 +186,38 @@
             </div>
             <div class="modal-content">
                 <div class="settings-section">
+                    <h3>Navigation</h3>
+                    <div class="settings-nav-grid">
+                        <a class="settings-nav-link" href="{{ landing_url }}">
+                            <span class="setting-label">Landing</span>
+                            <span class="setting-description">Quay về trang giới thiệu Thiên Vấn</span>
+                        </a>
+                        <a class="settings-nav-link" href="{% url 'chat-view' %}">
+                            <span class="setting-label">Chatbot</span>
+                            <span class="setting-description">Mở lại màn hình trò chuyện</span>
+                        </a>
+                        {% if request.user.is_staff %}
+                            <a class="settings-nav-link" href="{{ manager_data_url }}">
+                                <span class="setting-label">Dữ liệu</span>
+                                <span class="setting-description">Xem dữ liệu sản phẩm JSONL</span>
+                            </a>
+                            <a class="settings-nav-link" href="{{ manager_logs_url }}">
+                                <span class="setting-label">Chat logs</span>
+                                <span class="setting-description">Review log và hallucination</span>
+                            </a>
+                            <a class="settings-nav-link" href="{{ manager_config_url }}">
+                                <span class="setting-label">RAG config</span>
+                                <span class="setting-description">Chỉnh file cấu hình hệ thống</span>
+                            </a>
+                            <a class="settings-nav-link" href="{{ admin_url }}">
+                                <span class="setting-label">Django admin</span>
+                                <span class="setting-description">Quản trị database và user</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="settings-section">
                     <h3>Appearance</h3>
                     <div class="setting-item">
                         <div class="setting-info">

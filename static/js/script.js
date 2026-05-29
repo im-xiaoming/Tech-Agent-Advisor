@@ -32,6 +32,8 @@ const mainContent = document.getElementById('mainContent');
 const chatApiUrl = mainContent?.dataset.chatApiUrl || '/message/';
 const chatHistoryUrl = mainContent?.dataset.chatHistoryUrl || '';
 const chatHistoryClearUrl = mainContent?.dataset.chatHistoryClearUrl || '';
+const activeChatStorageKey = 'techChatActiveId';
+const newChatSentinel = '__new_chat__';
 
 // State
 let currentChatId = null;
@@ -52,6 +54,7 @@ async function init() {
     setupEventListeners();
     await loadChats();
     renderChatHistory();
+    restoreActiveChat();
 }
 
 // Load settings from localStorage
@@ -103,12 +106,67 @@ function getLocalChats() {
     return [];
 }
 
+function getChatActivityTime(chat) {
+    const messages = Array.isArray(chat.messages) ? chat.messages : [];
+    const lastMessage = messages[messages.length - 1];
+    const candidates = [
+        lastMessage?.timestamp,
+        chat.updatedAt,
+        chat.createdAt,
+    ];
+
+    for (const value of candidates) {
+        const time = value ? new Date(value).getTime() : NaN;
+        if (Number.isFinite(time)) return time;
+    }
+    return 0;
+}
+
+function sortChatsByActivity(items = chats) {
+    return [...items].sort((a, b) => getChatActivityTime(b) - getChatActivityTime(a));
+}
+
+function normalizeChats(items) {
+    return sortChatsByActivity(
+        (Array.isArray(items) ? items : [])
+            .filter(chat => chat && chat.id)
+            .map(chat => ({
+                ...chat,
+                messages: Array.isArray(chat.messages) ? chat.messages : [],
+                createdAt: chat.createdAt || chat.created_at || new Date().toISOString(),
+                updatedAt: chat.updatedAt || chat.updated_at || chat.createdAt || chat.created_at || new Date().toISOString(),
+            }))
+    );
+}
+
+function persistActiveChatId(chatId) {
+    if (chatId) {
+        localStorage.setItem(activeChatStorageKey, chatId);
+    } else {
+        localStorage.setItem(activeChatStorageKey, newChatSentinel);
+    }
+}
+
+function restoreActiveChat() {
+    const savedChatId = localStorage.getItem(activeChatStorageKey);
+    if (savedChatId === newChatSentinel) return;
+    if (savedChatId && chats.some(chat => chat.id === savedChatId)) {
+        loadChat(savedChatId);
+        return;
+    }
+
+    const [mostRecentChat] = sortChatsByActivity();
+    if (mostRecentChat) {
+        loadChat(mostRecentChat.id);
+    }
+}
+
 // Load chats from server, with localStorage as a fallback.
 async function loadChats() {
     const localChats = getLocalChats();
 
     if (!chatHistoryUrl) {
-        chats = localChats;
+        chats = normalizeChats(localChats);
         return;
     }
 
@@ -121,14 +179,14 @@ async function loadChats() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
-        chats = Array.isArray(data.chats) ? data.chats : [];
+        chats = normalizeChats(data.chats);
 
         if (chats.length === 0 && localChats.length > 0) {
-            chats = localChats;
+            chats = normalizeChats(localChats);
             await saveChats();
         }
     } catch (error) {
-        chats = localChats;
+        chats = normalizeChats(localChats);
         showToast('Could not load server history. Using local history.', 'error');
     }
 }
@@ -169,8 +227,8 @@ function renderChatHistory() {
     const weekChats = [];
     const monthChats = [];
     
-    chats.forEach(chat => {
-        const chatDate = new Date(chat.createdAt);
+    sortChatsByActivity().forEach(chat => {
+        const chatDate = new Date(getChatActivityTime(chat));
         if (chatDate >= today) {
             todayChats.push(chat);
         } else if (chatDate >= weekAgo) {
@@ -337,6 +395,7 @@ function autoResize() {
 // Start new chat
 function startNewChat() {
     currentChatId = null;
+    persistActiveChatId(null);
     messagesArea.innerHTML = '';
     welcomeScreen.classList.remove('hidden');
     messagesArea.classList.remove('active');
@@ -359,6 +418,7 @@ function loadChat(chatId) {
     if (!chat) return;
     
     currentChatId = chatId;
+    persistActiveChatId(chatId);
     welcomeScreen.classList.add('hidden');
     messagesArea.classList.add('active');
     
@@ -588,10 +648,12 @@ function sendMessage() {
             id: generateId(),
             title: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
             messages: [],
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         };
         chats.unshift(newChat);
         currentChatId = newChat.id;
+        persistActiveChatId(currentChatId);
     }
     
     // Add user message
@@ -603,9 +665,10 @@ function sendMessage() {
     
     const chat = chats.find(c => c.id === currentChatId);
     chat.messages.push(userMessage);
+    chat.updatedAt = userMessage.timestamp;
     
     // Render user message
-    messagesArea.innerHTML += createMessageHTML(userMessage);
+    messagesArea.insertAdjacentHTML('beforeend', createMessageHTML(userMessage));
     
     // Clear input
     messageInput.value = '';
@@ -701,6 +764,7 @@ async function getBotResponse(userMessage) {
             body: JSON.stringify({
                 query: userMessage,
                 history,
+                session_id: currentChatId,
             }),
         });
 
@@ -770,7 +834,9 @@ async function getBotResponse(userMessage) {
                 timestamp: new Date().toISOString(),
                 sources,
             });
+            chat.updatedAt = chat.messages[chat.messages.length - 1].timestamp;
             saveChats();
+            renderChatHistory();
         }
     } catch (error) {
         const text = `Sorry, the chatbot could not answer right now.\n\n${error.message}`;
@@ -782,7 +848,9 @@ async function getBotResponse(userMessage) {
                 content: text,
                 timestamp: new Date().toISOString(),
             });
+            chat.updatedAt = chat.messages[chat.messages.length - 1].timestamp;
             saveChats();
+            renderChatHistory();
         }
     } finally {
         hideTypingIndicator();
@@ -838,6 +906,7 @@ async function deleteChat(chatId) {
     renderChatHistory();
     
     if (currentChatId === chatId) {
+        persistActiveChatId(null);
         startNewChat();
     }
     
