@@ -156,6 +156,79 @@ body {
 
 [data-theme="blood"] .blood-image-layer {
     opacity: 0.26;
+    animation: bloodBackdropPulse 8s ease-in-out infinite;
+}
+
+.blood-image-layer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 4px),
+        repeating-radial-gradient(circle at 78% 62%, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 5px);
+    mix-blend-mode: overlay;
+    opacity: 0;
+    pointer-events: none;
+}
+
+[data-theme="blood"] .blood-image-layer::after {
+    opacity: 0.16;
+    animation: filmGrainDrift 0.9s steps(2, end) infinite;
+}
+
+.blood-image-layer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+        radial-gradient(circle at 50% 24%, rgba(255, 235, 205, 0.16), transparent 34%),
+        linear-gradient(to bottom, rgba(255, 220, 190, 0.05), transparent 38%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    pointer-events: none;
+}
+
+[data-theme="blood"] .blood-image-layer::before {
+    animation: bloodLightFlicker 6.5s steps(1, end) infinite;
+}
+
+.blood-light-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    background:
+        radial-gradient(circle at 50% 22%, rgba(255, 235, 200, 0.26), transparent 34%),
+        radial-gradient(circle at 80% 36%, rgba(255, 66, 82, 0.14), transparent 28%),
+        linear-gradient(to bottom, rgba(255, 235, 210, 0.08), transparent 46%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    pointer-events: none;
+}
+
+[data-theme="blood"] .blood-light-layer {
+    animation: bloodLightFlicker 5.4s steps(1, end) infinite;
+}
+
+.blood-side-light {
+    position: absolute;
+    top: -10%;
+    right: -14%;
+    bottom: -10%;
+    z-index: 4;
+    width: 46vw;
+    background:
+        linear-gradient(102deg, transparent 0 30%, rgba(255, 229, 196, 0.16) 42%, rgba(255, 56, 72, 0.14) 50%, transparent 66%),
+        radial-gradient(ellipse at 82% 42%, rgba(255, 219, 192, 0.16), transparent 44%);
+    filter: blur(10px);
+    mix-blend-mode: screen;
+    opacity: 0;
+    pointer-events: none;
+    transform: skewX(-10deg) translateX(18px);
+}
+
+[data-theme="blood"] .blood-side-light {
+    animation: bloodSideLightFlicker 7.2s steps(1, end) infinite;
 }
 
 .cultivation-backdrop::before,
@@ -630,6 +703,7 @@ body {
 }
 
 .history-item {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -645,6 +719,26 @@ body {
 
 .history-item.active {
     background-color: var(--bg-tertiary);
+}
+
+[data-theme="blood"] .history-item.active {
+    background:
+        linear-gradient(90deg, rgba(148, 8, 20, 0.42), rgba(69, 5, 12, 0.72)),
+        var(--bg-tertiary);
+    box-shadow:
+        inset 3px 0 0 rgba(236, 48, 62, 0.82),
+        0 0 18px rgba(216, 20, 40, 0.18);
+}
+
+[data-theme="blood"] .history-item.active::after {
+    content: "";
+    position: absolute;
+    top: 9px;
+    bottom: 9px;
+    left: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(255, 58, 75, 0.86), transparent);
+    animation: activeBloodEdge 2.4s ease-in-out infinite;
 }
 
 .history-item-title {
@@ -1044,12 +1138,16 @@ body {
 [data-theme="blood"] .message.user .message-markdown::after {
     content: "";
     position: absolute;
+    right: 0;
     bottom: -28px;
+    left: 0;
     z-index: 1;
-    width: 2px;
     height: 28px;
-    border-radius: 0 0 999px 999px;
-    background: linear-gradient(180deg, rgba(235, 39, 53, 0.92), rgba(106, 3, 14, 0.82) 74%, transparent);
+    background:
+        linear-gradient(180deg, rgba(235, 39, 53, 0.9), rgba(106, 3, 14, 0.78) 74%, transparent) 18% 0 / 2px 100% no-repeat,
+        linear-gradient(180deg, rgba(115, 4, 16, 0.72), rgba(72, 2, 10, 0.56) 70%, transparent) 38% 0 / 1px 68% no-repeat,
+        linear-gradient(180deg, rgba(220, 30, 45, 0.62), rgba(88, 3, 13, 0.54) 72%, transparent) 64% 0 / 2px 86% no-repeat,
+        linear-gradient(180deg, rgba(104, 3, 14, 0.62), rgba(66, 2, 9, 0.52) 70%, transparent) 82% 0 / 1px 64% no-repeat;
     filter: drop-shadow(0 0 4px rgba(216, 20, 40, 0.38));
     pointer-events: none;
     transform-origin: top center;
@@ -1057,21 +1155,15 @@ body {
 }
 
 [data-theme="blood"] .message.user .message-markdown::before {
-    left: 22%;
-    box-shadow:
-        28px -8px 0 -0.5px rgba(115, 4, 16, 0.78),
-        64px 2px 0 rgba(220, 30, 45, 0.62),
-        100px -6px 0 -0.5px rgba(104, 3, 14, 0.7);
     animation: bloodSeepFastA 2.6s cubic-bezier(0.42, 0, 0.2, 1) infinite;
 }
 
 [data-theme="blood"] .message.user .message-markdown::after {
-    right: 19%;
     height: 34px;
-    box-shadow:
-        -24px -6px 0 -0.5px rgba(115, 4, 16, 0.78),
-        -56px 3px 0 rgba(220, 30, 45, 0.58),
-        -94px -7px 0 -0.5px rgba(104, 3, 14, 0.68);
+    background:
+        linear-gradient(180deg, rgba(180, 12, 27, 0.68), rgba(76, 2, 11, 0.54) 70%, transparent) 28% 0 / 1px 62% no-repeat,
+        linear-gradient(180deg, rgba(238, 42, 57, 0.72), rgba(94, 3, 14, 0.58) 75%, transparent) 52% 0 / 2px 100% no-repeat,
+        linear-gradient(180deg, rgba(126, 4, 17, 0.62), rgba(70, 2, 10, 0.5) 70%, transparent) 74% 0 / 1px 72% no-repeat;
     animation: bloodSeepFastB 2.9s cubic-bezier(0.42, 0, 0.2, 1) infinite;
 }
 
@@ -1240,12 +1332,53 @@ body {
     animation-delay: 0.4s;
 }
 
+[data-theme="blood"] .typing-indicator {
+    gap: 7px;
+    align-items: flex-start;
+}
+
+[data-theme="blood"] .typing-indicator span {
+    width: 7px;
+    height: 11px;
+    border-radius: 999px 999px 999px 2px;
+    background: linear-gradient(180deg, #ff5060, #8f0718);
+    box-shadow: 0 0 9px rgba(216, 20, 40, 0.5);
+    transform-origin: top center;
+    animation: bloodTypingDrop 1.15s infinite ease-in-out;
+}
+
+[data-theme="blood"] .typing-indicator span:nth-child(2) {
+    animation-delay: 0.16s;
+}
+
+[data-theme="blood"] .typing-indicator span:nth-child(3) {
+    animation-delay: 0.32s;
+}
+
 @keyframes typing {
     0%, 60%, 100% {
         transform: translateY(0);
     }
     30% {
         transform: translateY(-10px);
+    }
+}
+
+@keyframes bloodTypingDrop {
+    0%,
+    100% {
+        transform: translateY(0) scaleY(0.78) rotate(-10deg);
+        opacity: 0.46;
+    }
+
+    45% {
+        transform: translateY(9px) scaleY(1.25) rotate(0deg);
+        opacity: 1;
+    }
+
+    72% {
+        transform: translateY(15px) scaleY(0.72) rotate(8deg);
+        opacity: 0;
     }
 }
 
@@ -1377,6 +1510,10 @@ body {
     font-size: 17px;
     line-height: 1;
     filter: drop-shadow(0 0 6px rgba(255, 93, 103, 0.4));
+}
+
+[data-theme="blood"] .send-btn.has-text {
+    animation: sendBloodPulse 1.8s ease-in-out infinite;
 }
 
 .send-btn:hover {
@@ -1664,6 +1801,121 @@ body {
     }
 }
 
+@keyframes bloodBackdropPulse {
+    0%,
+    100% {
+        opacity: 0.24;
+        transform: scale(1.02);
+    }
+
+    50% {
+        opacity: 0.3;
+        transform: scale(1.035);
+    }
+}
+
+@keyframes filmGrainDrift {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    50% {
+        transform: translate3d(-2%, 1%, 0);
+    }
+
+    100% {
+        transform: translate3d(1%, -2%, 0);
+    }
+}
+
+@keyframes bloodLightFlicker {
+    0%,
+    5%,
+    11%,
+    54%,
+    100% {
+        opacity: 0;
+    }
+
+    6% {
+        opacity: 0.7;
+    }
+
+    8% {
+        opacity: 0.18;
+    }
+
+    12% {
+        opacity: 0.48;
+    }
+
+    55% {
+        opacity: 0.26;
+    }
+
+    57% {
+        opacity: 0.62;
+    }
+
+    59% {
+        opacity: 0.08;
+    }
+}
+
+@keyframes bloodSideLightFlicker {
+    0%,
+    18%,
+    24%,
+    64%,
+    100% {
+        opacity: 0;
+        transform: skewX(-10deg) translateX(24px);
+    }
+
+    19% {
+        opacity: 0.46;
+        transform: skewX(-10deg) translateX(0);
+    }
+
+    21% {
+        opacity: 0.16;
+        transform: skewX(-10deg) translateX(8px);
+    }
+
+    25% {
+        opacity: 0.34;
+        transform: skewX(-10deg) translateX(4px);
+    }
+
+    65% {
+        opacity: 0.22;
+        transform: skewX(-10deg) translateX(14px);
+    }
+
+    67% {
+        opacity: 0.5;
+        transform: skewX(-10deg) translateX(-2px);
+    }
+
+    70% {
+        opacity: 0.08;
+        transform: skewX(-10deg) translateX(18px);
+    }
+}
+
+@keyframes activeBloodEdge {
+    0%,
+    100% {
+        opacity: 0.34;
+        transform: scaleY(0.72);
+    }
+
+    50% {
+        opacity: 0.95;
+        transform: scaleY(1);
+    }
+}
+
 @keyframes bloodMistFlow {
     0%,
     100% {
@@ -1672,6 +1924,23 @@ body {
 
     50% {
         transform: translate3d(18vw, -4vh, 120px);
+    }
+}
+
+@keyframes sendBloodPulse {
+    0%,
+    100% {
+        box-shadow:
+            0 0 0 rgba(216, 20, 40, 0),
+            0 0 12px rgba(216, 20, 40, 0.24);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 4px rgba(216, 20, 40, 0.16),
+            0 0 22px rgba(255, 65, 82, 0.4);
+        transform: scale(1.04);
     }
 }
 

@@ -615,7 +615,10 @@ function setupEventListeners() {
     exportDataBtn.addEventListener('click', exportData);
     
     // Message input
-    messageInput.addEventListener('input', autoResize);
+    messageInput.addEventListener('input', () => {
+        autoResize();
+        updateSendButtonState();
+    });
     messageInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey && settings.enterSend) {
             e.preventDefault();
@@ -630,6 +633,7 @@ function setupEventListeners() {
         card.addEventListener('click', () => {
             const prompt = card.dataset.prompt;
             messageInput.value = prompt;
+            updateSendButtonState();
             sendMessage();
         });
     });
@@ -641,6 +645,10 @@ function autoResize() {
     messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
 }
 
+function updateSendButtonState() {
+    sendBtn.classList.toggle('has-text', Boolean(messageInput.value.trim()));
+}
+
 // Start new chat
 function startNewChat() {
     currentChatId = null;
@@ -650,6 +658,7 @@ function startNewChat() {
     messagesArea.classList.remove('active');
     messageInput.value = '';
     autoResize();
+    updateSendButtonState();
     
     // Close mobile sidebar
     sidebar.classList.remove('mobile-open');
@@ -922,6 +931,7 @@ function sendMessage() {
     // Clear input
     messageInput.value = '';
     autoResize();
+    updateSendButtonState();
     
     // Scroll to bottom
     chatContainer.scrollTop = chatContainer.scrollHeight;
