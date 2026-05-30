@@ -1,7 +1,7 @@
 """Verify that citations in an LLM answer are valid against the cited context.
 
 The advisor prompt requires every claim that mentions product data to be tagged
-with ``[N]`` where N is the citation index assigned by the retrieval agent.
+with a numeric citation index assigned by the retrieval agent.
 This module checks the answer for:
 
 - Are there any citations at all? (substantive answers should have some.)
@@ -15,6 +15,7 @@ import re
 
 
 _CITATION_RE = re.compile(r"\[(\d+)\]")
+_PLACEHOLDER_CITATION_RE = re.compile(r"\[\s*N\s*\]", re.IGNORECASE)
 _SUBSTANTIVE_MIN_WORDS = 15
 
 
@@ -40,16 +41,19 @@ def verify_citations(answer: str, num_docs: int) -> dict:
           "citations": [list of cited ints],
           "invalid": [list of ints outside 1..num_docs],
           "missing": True if substantive answer has zero citations,
-          "ok": True iff invalid==[] and not missing,
+          "placeholder": True if the answer contains a placeholder citation,
+          "ok": True iff invalid==[] and not missing and not placeholder,
         }
     """
     citations = parse_citations(answer)
+    has_placeholder = bool(_PLACEHOLDER_CITATION_RE.search(answer or ""))
     invalid = [c for c in citations if c < 1 or c > num_docs]
     word_count = len((answer or "").split())
     missing = word_count >= _SUBSTANTIVE_MIN_WORDS and not citations
     return {
         "citations": citations,
         "invalid": invalid,
+        "placeholder": has_placeholder,
         "missing": missing,
-        "ok": not invalid and not missing,
+        "ok": not invalid and not missing and not has_placeholder,
     }

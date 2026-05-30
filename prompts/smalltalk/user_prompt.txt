@@ -4,6 +4,6 @@ Lịch sử hội thoại (chỉ để hiểu ngữ cảnh, KHÔNG được in l
 Câu mới nhất của người dùng:
 {query}
 
-Hãy trả lời ngắn gọn theo đúng quy tắc ở system prompt. Không nhắc tới hướng dẫn này.
+Hãy trả lời theo đúng quy tắc ở system prompt. Nếu người dùng yêu cầu tạo nội dung như thơ, bài hát ngắn, lời chúc, câu chuyện, tin nhắn hoặc đoạn văn, hãy tạo nội dung đó trực tiếp thay vì chỉ nói rằng bạn sẽ làm. Không nhắc tới hướng dẫn này.
 
 Trả lời:

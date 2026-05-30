@@ -301,9 +301,22 @@ def summarize_history(history: str, reasoning: bool = False) -> str:
     if not history:
         return ""
 
-    system_prompt = f"""
-    SYSTEM PROMPT:
-    Summarize the following conversation history in a concise and easy-to-understand way while preserving its main meaning.
+    user_prompt = f"""
+    HISTORY:
+    {history}
+    
+    USER PROMPT:
+    Your task is to summarize the given conversation history in a concise, clear, and easy-to-understand way while preserving the main meaning, important context, decisions, and relevant details.
+
+    Requirements:
+    - Clearly separate SYSTEM messages and USER messages.
+    - Keep the chronological flow of the conversation.
+    - Preserve important technical details, user preferences, constraints, and conclusions.
+    - Remove unnecessary repetition, filler text, and small talk.
+    - Use simple and readable language.
+    - Do not invent or assume information that is not present in the conversation.
+    - If the conversation contains multiple topics, group them logically
+    - Always summarize in English.
     """
     
-    return generate_response(system_prompt, history, temperature=0.1, reasoning=reasoning)
+    return generate_response("", user_prompt, temperature=0.1, reasoning=reasoning)

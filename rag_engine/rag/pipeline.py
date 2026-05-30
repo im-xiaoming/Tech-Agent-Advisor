@@ -17,8 +17,9 @@ from rag_engine.rag.vector_store import load_vector_db
 
 _REGEN_INSTRUCTIONS = (
     "LƯU Ý LẦN VIẾT LẠI: lượt trước câu trả lời chưa đủ căn cứ từ CONTEXT. "
-    "Lần này hãy bám sát NGUYÊN VĂN thông số trong CONTEXT, BẮT BUỘC kèm [N] cho mọi câu chứa thông tin sản phẩm, "
-    "và KHÔNG suy luận ngoài CONTEXT. Nếu CONTEXT không đủ, nói thẳng phần thiếu."
+    "Lần này hãy bám sát NGUYÊN VĂN thông số trong CONTEXT. "
+    "BẮT BUỘC dùng citation số thật như [1], [2] cho mọi câu chứa thông tin sản phẩm. "
+    "Tuyệt đối không in chữ N trong ngoặc vuông. Nếu CONTEXT không đủ, nói thẳng phần thiếu."
 )
 
 
@@ -38,6 +39,8 @@ def _evaluate_answer(answer: str, context: str, num_docs: int) -> dict:
         needs_regen = True
         if citation_report["invalid"]:
             reasons.append(f"invalid citations: {citation_report['invalid']}")
+        if citation_report.get("placeholder"):
+            reasons.append("placeholder citation")
         if citation_report["missing"]:
             reasons.append("missing citations")
     if (

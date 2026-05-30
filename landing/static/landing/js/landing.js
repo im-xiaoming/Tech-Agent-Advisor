@@ -162,8 +162,9 @@
         if (videoSwitchTimer) window.clearTimeout(videoSwitchTimer);
         const activeVideo = videos[activeVideoIndex];
         const duration = Number.isFinite(activeVideo?.duration) ? activeVideo.duration : 0;
-        const remaining = duration ? Math.max(duration - activeVideo.currentTime - 1.1, 8) : 14;
-        const segmentSeconds = Math.min(remaining, 22);
+        if (!duration) return;
+
+        const segmentSeconds = Math.max(duration - activeVideo.currentTime + 0.35, 0.35);
         videoSwitchTimer = window.setTimeout(() => {
             activateVideo((activeVideoIndex + 1) % videos.length);
         }, segmentSeconds * 1000);
