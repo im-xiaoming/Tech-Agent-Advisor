@@ -13,7 +13,43 @@ from manager.models import ChatLog
 
 
 CONFIG_PATH = settings.BASE_DIR / ".config" / "config.yaml"
-PRODUCT_DATA_PATH = settings.BASE_DIR / "data" / "cellphones_mobile.jsonl"
+DATA_DIR = settings.BASE_DIR / "data"
+
+_CATEGORY_LABELS = {
+    "camera": "Camera",
+    "charger": "Sạc",
+    "desktop": "Máy tính để bàn",
+    "ebook": "Đọc sách",
+    "fan": "Quạt",
+    "hard_drive": "Ổ cứng",
+    "headphones": "Tai nghe",
+    "hub": "Hub",
+    "keyboard": "Bàn phím",
+    "laptop": "Laptop",
+    "memory_card": "Thẻ nhớ",
+    "microphone": "Micro",
+    "mobile": "Điện thoại",
+    "monitor": "Màn hình",
+    "mouse": "Chuột",
+    "network": "Thiết bị mạng",
+    "powerbank": "Pin dự phòng",
+    "printer": "Máy in",
+    "projector": "Máy chiếu",
+    "smartwatch": "Đồng hồ thông minh",
+    "smart_light": "Đèn thông minh",
+    "speaker": "Loa",
+    "tablet": "Máy tính bảng",
+    "usb": "USB",
+    "watch": "Đồng hồ",
+}
+
+
+def _category_from_filename(path):
+    stem = path.stem  # e.g. "tgdd_laptop" or "cellphones_mobile"
+    for key, label in _CATEGORY_LABELS.items():
+        if stem.endswith(key):
+            return key, label
+    return stem, stem
 
 
 def _read_config_file():
@@ -36,23 +72,28 @@ def _write_config_file(data):
 
 
 def _load_product_records():
-    """Load product records from the local JSONL data file for admin display."""
+    """Load all JSONL files from the data directory."""
     records = []
-    if not PRODUCT_DATA_PATH.exists():
+    if not DATA_DIR.exists():
         return records
 
-    with PRODUCT_DATA_PATH.open("r", encoding="utf-8") as source:
-        for line_number, line in enumerate(source, start=1):
-            if not line.strip():
-                continue
-            try:
-                item = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if not isinstance(item, dict):
-                continue
-            item["line_number_display"] = line_number
-            records.append(item)
+    for jsonl_file in sorted(DATA_DIR.glob("*.jsonl")):
+        cat_key, cat_label = _category_from_filename(jsonl_file)
+        with jsonl_file.open("r", encoding="utf-8") as source:
+            for line_number, line in enumerate(source, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    item = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(item, dict):
+                    continue
+                item["line_number_display"] = line_number
+                item["category_key"] = cat_key
+                item["category_label"] = cat_label
+                item["source_file"] = jsonl_file.name
+                records.append(item)
     return records
 
 
@@ -81,11 +122,17 @@ def config_manager(request):
 
 @staff_member_required
 def product_data_view(request):
-    """Admin-only page for browsing product data loaded from JSONL."""
-    records = _load_product_records()
+    """Admin-only page for browsing all product data from JSONL files."""
+    all_records = _load_product_records()
 
     search = request.GET.get("q", "").strip()
     brand = request.GET.get("brand", "").strip()
+    category = request.GET.get("category", "").strip()
+
+    records = all_records
+
+    if category:
+        records = [r for r in records if r.get("category_key") == category]
 
     if search:
         needle = search.casefold()
@@ -97,20 +144,21 @@ def product_data_view(request):
             ).casefold()
         ]
 
-    brands = sorted(
-        {
-            str(item.get("brand", "")).strip()
-            for item in _load_product_records()
-            if str(item.get("brand", "")).strip()
-        },
-        key=str.casefold,
-    )
-
     if brand:
         records = [
             item for item in records
             if str(item.get("brand", "")).strip().casefold() == brand.casefold()
         ]
+
+    brands = sorted(
+        {str(r.get("brand", "")).strip() for r in records if str(r.get("brand", "")).strip()},
+        key=str.casefold,
+    )
+
+    categories = sorted(
+        {(r["category_key"], r["category_label"]) for r in all_records},
+        key=lambda x: x[1].casefold(),
+    )
 
     paginator = Paginator(records, 25)
     page = paginator.get_page(request.GET.get("page"))
@@ -121,10 +169,12 @@ def product_data_view(request):
         {
             "page_obj": page,
             "brands": brands,
+            "categories": categories,
             "current_search": search,
             "current_brand": brand,
-            "data_path": PRODUCT_DATA_PATH,
-            "total_records": len(_load_product_records()),
+            "current_category": category,
+            "data_path": DATA_DIR,
+            "total_records": len(all_records),
         },
     )
 

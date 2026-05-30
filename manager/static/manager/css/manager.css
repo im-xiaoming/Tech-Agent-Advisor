@@ -16,7 +16,7 @@ body {
 .manager-page {
     width: min(1180px, calc(100% - 32px));
     margin: 0 auto;
-    padding: 32px 0 48px;
+    padding: 32px 0 96px;
 }
 
 .manager-header {
@@ -153,12 +153,18 @@ label span {
 }
 
 .form-footer {
-    position: sticky;
+    position: fixed;
     bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
     display: flex;
     justify-content: flex-end;
-    padding: 16px 0 0;
-    background: linear-gradient(transparent, #f9fafb 30%);
+    padding: 12px 24px;
+    background: rgba(249, 250, 251, 0.92);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .form-footer button {

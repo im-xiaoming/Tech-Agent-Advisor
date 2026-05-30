@@ -7,6 +7,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Config Manager</title>
     <link rel="stylesheet" href="{% static 'manager/css/manager.css' %}">
+    <style>
+        .config-section { margin-bottom: 2rem; }
+        .config-section h2 { margin-bottom: 1rem; font-size: 1rem; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; border-bottom: 1px solid #e5e7eb; padding-bottom: .4rem; }
+        .field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+        .field-grid label { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+        .field-grid label > .field-name { font-weight: 600; color: #374151; }
+        .field-grid label > .field-hint { font-size: 12px; color: #9ca3af; margin-bottom: 2px; }
+        .checkbox-row { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 1.2rem; }
+        .checkbox-item { display: flex; flex-direction: column; gap: 2px; }
+        .checkbox-item .cb-label { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #374151; font-size: 14px; cursor: pointer; }
+        .checkbox-item .field-hint { font-size: 12px; color: #9ca3af; }
+        .section-hint { font-size: 13px; color: #6b7280; margin-bottom: .6rem; }
+        .config-section .field-full { grid-column: 1 / -1; }
+    </style>
 </head>
 <body>
     <main class="manager-page">
@@ -36,94 +50,226 @@
             {% csrf_token %}
             {{ form.non_field_errors }}
 
+            <!-- Chunking -->
             <section class="config-section">
                 <h2>Chunking</h2>
                 <div class="field-grid">
                     <label>
-                        <span>{{ form.chunk_size.label }}</span>
+                        <span class="field-name">{{ form.chunk_size.label }}</span>
+                        <span class="field-hint">Số token mỗi đoạn văn bản khi cắt nhỏ tài liệu.</span>
                         {{ form.chunk_size }}
                         {{ form.chunk_size.errors }}
                     </label>
                     <label>
-                        <span>{{ form.chunk_overlap.label }}</span>
+                        <span class="field-name">{{ form.chunk_overlap.label }}</span>
+                        <span class="field-hint">Token chồng lấp giữa 2 chunk liên tiếp để giữ ngữ cảnh.</span>
                         {{ form.chunk_overlap }}
                         {{ form.chunk_overlap.errors }}
                     </label>
                 </div>
             </section>
 
+            <!-- Retriever -->
             <section class="config-section">
                 <h2>Retriever</h2>
                 <div class="field-grid">
                     <label>
-                        <span>{{ form.score_threshold.label }}</span>
+                        <span class="field-name">{{ form.score_threshold.label }}</span>
+                        <span class="field-hint">Ngưỡng điểm tối thiểu để chấp nhận kết quả tìm kiếm (0–1).</span>
                         {{ form.score_threshold }}
                         {{ form.score_threshold.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.sparse_model.label }}</span>
+                        <span class="field-hint">Model BM25 dùng cho tìm kiếm sparse (chỉ dùng khi hybrid bật).</span>
+                        {{ form.sparse_model }}
+                        {{ form.sparse_model.errors }}
+                    </label>
+                </div>
+                <div class="checkbox-row" style="margin-top:.8rem;">
+                    <div class="checkbox-item">
+                        <label class="cb-label">
+                            {{ form.hybrid_enabled }}
+                            <span>{{ form.hybrid_enabled.label }}</span>
+                        </label>
+                        <span class="field-hint">Kết hợp dense vector + BM25 sparse để tăng recall. Cần rebuild index.</span>
+                        {{ form.hybrid_enabled.errors }}
+                    </div>
+                    <div class="checkbox-item">
+                        <label class="cb-label">
+                            {{ form.self_query_enabled }}
+                            <span>{{ form.self_query_enabled.label }}</span>
+                        </label>
+                        <span class="field-hint">Dùng LLM tự trích filter (giá, RAM, brand…) từ câu hỏi trước khi tìm.</span>
+                        {{ form.self_query_enabled.errors }}
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reranker -->
+            <section class="config-section">
+                <h2>Reranker</h2>
+                <div class="checkbox-row" style="margin-bottom:.8rem;">
+                    <div class="checkbox-item">
+                        <label class="cb-label">
+                            {{ form.reranker_enabled }}
+                            <span>{{ form.reranker_enabled.label }}</span>
+                        </label>
+                        <span class="field-hint">Bật cross-encoder để sắp xếp lại kết quả retrieval.</span>
+                        {{ form.reranker_enabled.errors }}
+                    </div>
+                    <div class="checkbox-item">
+                        <label class="cb-label">
+                            {{ form.reranker_regenerate_enabled }}
+                            <span>{{ form.reranker_regenerate_enabled.label }}</span>
+                        </label>
+                        <span class="field-hint">Tự sinh lại câu trả lời nếu groundedness/citation quá thấp.</span>
+                        {{ form.reranker_regenerate_enabled.errors }}
+                    </div>
+                </div>
+                <div class="field-grid">
+                    <label style="grid-column: span 2;">
+                        <span class="field-name">{{ form.reranker_model.label }}</span>
+                        <span class="field-hint">Tên model cross-encoder dùng để rerank.</span>
+                        {{ form.reranker_model }}
+                        {{ form.reranker_model.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.reranker_top_n.label }}</span>
+                        <span class="field-hint">Số kết quả cuối cùng giữ lại sau khi rerank.</span>
+                        {{ form.reranker_top_n }}
+                        {{ form.reranker_top_n.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.reranker_candidate_multiplier.label }}</span>
+                        <span class="field-hint">Hệ số nhân top_n để lấy pool ứng viên trước khi rerank.</span>
+                        {{ form.reranker_candidate_multiplier }}
+                        {{ form.reranker_candidate_multiplier.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.reranker_hallucination_threshold.label }}</span>
+                        <span class="field-hint">Ngưỡng groundedness; dưới mức này coi là có thể hallucination (0–1).</span>
+                        {{ form.reranker_hallucination_threshold }}
+                        {{ form.reranker_hallucination_threshold.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.reranker_min_rerank_score.label }}</span>
+                        <span class="field-hint">Điểm rerank tối thiểu để chunk được đưa vào context (0–1).</span>
+                        {{ form.reranker_min_rerank_score }}
+                        {{ form.reranker_min_rerank_score.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.reranker_regenerate_threshold.label }}</span>
+                        <span class="field-hint">Ngưỡng groundedness để kích hoạt regenerate (0–1).</span>
+                        {{ form.reranker_regenerate_threshold }}
+                        {{ form.reranker_regenerate_threshold.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.reranker_max_regenerations.label }}</span>
+                        <span class="field-hint">Số lần regenerate tối đa mỗi lượt hỏi.</span>
+                        {{ form.reranker_max_regenerations }}
+                        {{ form.reranker_max_regenerations.errors }}
                     </label>
                 </div>
             </section>
 
+            <!-- Chat history -->
             <section class="config-section">
                 <h2>Chat history</h2>
                 <div class="field-grid">
                     <label>
-                        <span>{{ form.num_chats_retained.label }}</span>
+                        <span class="field-name">{{ form.num_chats_retained.label }}</span>
+                        <span class="field-hint">Số lượt hội thoại gần nhất giữ lại làm ngữ cảnh.</span>
                         {{ form.num_chats_retained }}
                         {{ form.num_chats_retained.errors }}
                     </label>
                     <label>
-                        <span>{{ form.max_length.label }}</span>
+                        <span class="field-name">{{ form.max_length.label }}</span>
+                        <span class="field-hint">Giới hạn token tối đa cho toàn bộ lịch sử chat đưa vào prompt.</span>
                         {{ form.max_length }}
                         {{ form.max_length.errors }}
                     </label>
                     <label>
-                        <span>{{ form.beam_size.label }}</span>
+                        <span class="field-name">{{ form.beam_size.label }}</span>
+                        <span class="field-hint">Số beam dùng khi tóm tắt / nén lịch sử hội thoại dài.</span>
                         {{ form.beam_size }}
                         {{ form.beam_size.errors }}
                     </label>
                 </div>
             </section>
 
+            <!-- Pipeline -->
             <section class="config-section">
                 <h2>Pipeline</h2>
                 <div class="field-grid">
                     <label>
-                        <span>{{ form.splitter_method.label }}</span>
+                        <span class="field-name">{{ form.splitter_method.label }}</span>
+                        <span class="field-hint">Chiến lược cắt chunk: recursive_character / tiktoken / sentence_transformer.</span>
                         {{ form.splitter_method }}
                         {{ form.splitter_method.errors }}
                     </label>
                     <label>
-                        <span>{{ form.loader_type.label }}</span>
+                        <span class="field-name">{{ form.loader_type.label }}</span>
+                        <span class="field-hint">Định dạng file dữ liệu đầu vào (jsonl, csv, …).</span>
                         {{ form.loader_type }}
                         {{ form.loader_type.errors }}
                     </label>
                 </div>
             </section>
 
+            <!-- Embedding -->
             <section class="config-section">
                 <h2>Embedding</h2>
                 <div class="field-grid">
                     <label>
-                        <span>{{ form.embedding_provider.label }}</span>
+                        <span class="field-name">{{ form.embedding_provider.label }}</span>
+                        <span class="field-hint">Backend chạy embedding: huggingface hoặc ollama.</span>
                         {{ form.embedding_provider }}
                         {{ form.embedding_provider.errors }}
                     </label>
-                    <label>
-                        <span>{{ form.embedding_model.label }}</span>
+                    <label style="grid-column: span 2;">
+                        <span class="field-name">{{ form.embedding_model.label }}</span>
+                        <span class="field-hint">Tên model embedding (phải khớp với dimension bên dưới).</span>
                         {{ form.embedding_model }}
                         {{ form.embedding_model.errors }}
                     </label>
                     <label>
-                        <span>{{ form.embedding_dimension.label }}</span>
+                        <span class="field-name">{{ form.embedding_dimension.label }}</span>
+                        <span class="field-hint">Số chiều vector; bge-m3=1024, qwen3-embedding=4096.</span>
                         {{ form.embedding_dimension }}
                         {{ form.embedding_dimension.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.embedding_device.label }}</span>
+                        <span class="field-hint">Thiết bị tính toán: auto, cuda, hoặc cpu.</span>
+                        {{ form.embedding_device }}
+                        {{ form.embedding_device.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.embedding_batch_size.label }}</span>
+                        <span class="field-hint">Số câu xử lý mỗi batch khi encode lúc inference.</span>
+                        {{ form.embedding_batch_size }}
+                        {{ form.embedding_batch_size.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.embedding_max_seq_length.label }}</span>
+                        <span class="field-hint">Độ dài token tối đa mỗi đoạn đưa vào model embedding.</span>
+                        {{ form.embedding_max_seq_length }}
+                        {{ form.embedding_max_seq_length.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.embedding_ingest_batch_size.label }}</span>
+                        <span class="field-hint">Số chunk encode song song khi ingest dữ liệu vào vector store.</span>
+                        {{ form.embedding_ingest_batch_size }}
+                        {{ form.embedding_ingest_batch_size.errors }}
                     </label>
                 </div>
             </section>
 
+            <!-- Raw YAML -->
             <section class="config-section">
                 <h2>Raw YAML</h2>
-                <p class="hint">Vùng này rộng để sửa trực tiếp toàn bộ file. Các field phía trên sẽ ghi đè giá trị tương ứng khi lưu.</p>
+                <p class="section-hint">Sửa trực tiếp toàn bộ file. Các field phía trên sẽ ghi đè giá trị tương ứng khi lưu.</p>
                 {{ form.raw_yaml }}
                 {{ form.raw_yaml.errors }}
             </section>

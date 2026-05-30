@@ -1522,21 +1522,22 @@ function exportData() {
 
 // Show toast notification
 function showToast(message, type = 'info') {
-    // Remove existing toast
     const existingToast = document.querySelector('.toast');
-    if (existingToast) {
-        existingToast.remove();
-    }
-    
+    if (existingToast) existingToast.remove();
+
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.textContent = message;
     document.body.appendChild(toast);
-    
-    // Show toast
+
+    // Center toast over the main content area, not the full viewport
+    const main = document.getElementById('mainContent');
+    if (main) {
+        const rect = main.getBoundingClientRect();
+        toast.style.left = (rect.left + rect.width / 2) + 'px';
+    }
+
     setTimeout(() => toast.classList.add('show'), 10);
-    
-    // Hide toast
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);

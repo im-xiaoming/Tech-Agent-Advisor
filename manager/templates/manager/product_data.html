@@ -157,9 +157,18 @@
             <input type="text" name="q" value="{{ current_search }}" placeholder="Tên, hãng, mô tả, thông số...">
         </label>
         <label>
+            <span>Danh mục</span>
+            <select name="category">
+                <option value="">Tất cả danh mục</option>
+                {% for cat_key, cat_label in categories %}
+                    <option value="{{ cat_key }}" {% if cat_key == current_category %}selected{% endif %}>{{ cat_label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
             <span>Hãng</span>
             <select name="brand">
-                <option value="">Tất cả</option>
+                <option value="">Tất cả hãng</option>
                 {% for brand in brands %}
                     <option value="{{ brand }}" {% if brand == current_brand %}selected{% endif %}>{{ brand }}</option>
                 {% endfor %}
@@ -173,6 +182,7 @@
         <thead>
             <tr>
                 <th>Dòng</th>
+                <th>Danh mục</th>
                 <th>Sản phẩm</th>
                 <th>Hãng</th>
                 <th>Giá</th>
@@ -185,6 +195,7 @@
             {% for item in page_obj %}
                 <tr>
                     <td>#{{ item.line_number_display }}</td>
+                    <td>{{ item.category_label|default:"-" }}</td>
                     <td class="truncate" title="{{ item.title }}">{{ item.title|default:"-" }}</td>
                     <td>{{ item.brand|default:"-" }}</td>
                     <td class="price">
@@ -208,7 +219,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="7" style="padding: 2rem; text-align: center;">Không tìm thấy dữ liệu phù hợp.</td>
+                    <td colspan="8" style="padding: 2rem; text-align: center;">Không tìm thấy dữ liệu phù hợp.</td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -216,11 +227,11 @@
 
     <div class="pagination">
         {% if page_obj.has_previous %}
-            <a href="?{% if current_search %}q={{ current_search|urlencode }}&{% endif %}{% if current_brand %}brand={{ current_brand|urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">‹ Trước</a>
+            <a href="?{% if current_search %}q={{ current_search|urlencode }}&{% endif %}{% if current_category %}category={{ current_category|urlencode }}&{% endif %}{% if current_brand %}brand={{ current_brand|urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">‹ Trước</a>
         {% endif %}
         <span>Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} dòng)</span>
         {% if page_obj.has_next %}
-            <a href="?{% if current_search %}q={{ current_search|urlencode }}&{% endif %}{% if current_brand %}brand={{ current_brand|urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">Sau ›</a>
+            <a href="?{% if current_search %}q={{ current_search|urlencode }}&{% endif %}{% if current_category %}category={{ current_category|urlencode }}&{% endif %}{% if current_brand %}brand={{ current_brand|urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">Sau ›</a>
         {% endif %}
     </div>
 </main>
