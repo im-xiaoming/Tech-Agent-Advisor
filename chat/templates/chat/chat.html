@@ -7,6 +7,47 @@
 
 {% block content %}
     <div class="app-container">
+        <div class="cultivation-backdrop" aria-hidden="true">
+            <div class="blood-image-layer"></div>
+            <div class="blood-mist mist-left"></div>
+            <div class="blood-mist mist-right"></div>
+            <div class="arcane-ring ring-prime"></div>
+            <div class="arcane-ring ring-second"></div>
+            <div class="curse-talisman talisman-center"><span>敕</span><span>血</span><span>鎮</span><span>魂</span><span>符</span></div>
+            <div class="curse-talisman talisman-a"><span>鎮</span><span>煞</span><span>符</span></div>
+            <div class="curse-talisman talisman-b"><span>破</span><span>邪</span><span>令</span></div>
+            <div class="curse-talisman talisman-c"><span>封</span><span>魂</span><span>印</span></div>
+            <div class="demon-skull skull-a">
+                <i></i>
+            </div>
+            <div class="demon-skull skull-b">
+                <i></i>
+            </div>
+            <div class="demon-skull skull-c">
+                <i></i>
+            </div>
+            <div class="talisman-field">
+                <span>問</span>
+                <span>道</span>
+                <span>靈</span>
+                <span>機</span>
+                <span>陣</span>
+                <span>訣</span>
+                <span class="sanskrit-glyph">ॐ</span>
+                <span class="sanskrit-glyph">ह्रीं</span>
+                <span class="sanskrit-glyph">स्वाहा</span>
+                <span class="sanskrit-glyph">मणि</span>
+                <span class="sanskrit-glyph">पद्मे</span>
+                <span class="sanskrit-glyph">हुं</span>
+                <span class="sanskrit-glyph">अहं</span>
+                <span class="sanskrit-glyph">वज्र</span>
+                <span class="sanskrit-glyph">धर्म</span>
+                <span class="sanskrit-glyph">शक्ति</span>
+                <span class="sanskrit-glyph">क्लीं</span>
+                <span class="sanskrit-glyph">तारा</span>
+            </div>
+        </div>
+
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -14,7 +55,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 5v14M5 12h14"/>
                     </svg>
-                    New chat
+                    <span data-ui-text="newChat">New chat</span>
                 </button>
                 <button class="toggle-sidebar-btn" id="toggleSidebar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -25,15 +66,15 @@
             
             <div class="chat-history" id="chatHistory">
                 <div class="history-section">
-                    <h3>Today</h3>
+                    <h3 data-ui-text="today">Today</h3>
                     <div class="history-list" id="todayHistory"></div>
                 </div>
                 <div class="history-section">
-                    <h3>Previous 7 days</h3>
+                    <h3 data-ui-text="week">Previous 7 days</h3>
                     <div class="history-list" id="weekHistory"></div>
                 </div>
                 <div class="history-section">
-                    <h3>Previous 30 days</h3>
+                    <h3 data-ui-text="month">Previous 30 days</h3>
                     <div class="history-list" id="monthHistory"></div>
                 </div>
             </div>
@@ -44,7 +85,7 @@
                         {{ request.user.username|first|upper }}
                     </div>
                     <span class="user-name" title="{{ request.user.username }}">{{ request.user.username }}</span>
-                    <a class="logout-link" href="{{ logout_url }}" title="Logout" aria-label="Logout">
+                    <a class="logout-link" href="{{ logout_url }}" title="Logout" aria-label="Logout" data-ui-title="logout">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                             <polyline points="16 17 21 12 16 7"/>
@@ -57,7 +98,7 @@
                         <circle cx="12" cy="12" r="3"/>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                     </svg>
-                    Settings
+                    <span data-ui-text="settings">Settings</span>
                 </button>
             </div>
         </aside>
@@ -72,7 +113,7 @@
             data-user-id="{{ request.user.id }}"
         >
             {% csrf_token %}
-            <button class="desktop-open-sidebar" id="desktopOpenSidebar" title="Open sidebar">
+            <button class="desktop-open-sidebar" id="desktopOpenSidebar" title="Open sidebar" data-ui-title="openSidebar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 12h18M3 6h18M3 18h18"/>
                 </svg>
@@ -81,11 +122,11 @@
             <!-- Mobile Header -->
             <header class="mobile-header">
                 <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <svg width="24" heigfht="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 12h18M3 6h18M3 18h18"/>
                     </svg>
                 </button>
-                <h1>Tech ChatBot</h1>
+                <h1 data-ui-text="brand">Tech ChatBot</h1>
                 <button class="mobile-new-chat" id="mobileNewChat">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 5v14M5 12h14"/>
@@ -103,39 +144,39 @@
                             <path d="M9 9h6M9 13h6M9 17h4"/>
                         </svg>
                     </div>
-                    <h1>Tech ChatBot</h1>
-                    <p>Your technology Q&A assistant</p>
+                    <h1 data-ui-text="brand">Tech ChatBot</h1>
+                    <p data-ui-text="tagline">Your technology Q&A assistant</p>
                     
                     <div class="suggestion-grid">
-                        <button class="suggestion-card" data-prompt="Explain AI and machine learning">
+                        <button class="suggestion-card" data-ui-prompt="suggestAi" data-prompt="Explain AI and machine learning">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/>
                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
                                 <path d="M12 17h.01"/>
                             </svg>
-                            <span>Explain AI and machine learning</span>
+                            <span data-ui-text="suggestAi">Explain AI and machine learning</span>
                         </button>
-                        <button class="suggestion-card" data-prompt="Compare Python and JavaScript">
+                        <button class="suggestion-card" data-ui-prompt="suggestCompare" data-prompt="Compare Python and JavaScript">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="16 18 22 12 16 6"/>
                                 <polyline points="8 6 2 12 8 18"/>
                             </svg>
-                            <span>Compare Python and JavaScript</span>
+                            <span data-ui-text="suggestCompare">Compare Python and JavaScript</span>
                         </button>
-                        <button class="suggestion-card" data-prompt="Create a roadmap for learning web development">
+                        <button class="suggestion-card" data-ui-prompt="suggestRoadmap" data-prompt="Create a roadmap for learning web development">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
                                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                             </svg>
-                            <span>Create a roadmap for learning web development</span>
+                            <span data-ui-text="suggestRoadmap">Create a roadmap for learning web development</span>
                         </button>
-                        <button class="suggestion-card" data-prompt="Summarize current technology trends">
+                        <button class="suggestion-card" data-ui-prompt="suggestTrends" data-prompt="Summarize current technology trends">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="20" x2="12" y2="10"/>
                                 <line x1="18" y1="20" x2="18" y2="4"/>
                                 <line x1="6" y1="20" x2="6" y2="16"/>
                             </svg>
-                            <span>Summarize current technology trends</span>
+                            <span data-ui-text="suggestTrends">Summarize current technology trends</span>
                         </button>
                     </div>
                 </div>
@@ -151,23 +192,25 @@
                         <textarea 
                             id="messageInput" 
                             placeholder="Ask a technology question..."
+                            data-ui-placeholder="messagePlaceholder"
                             rows="1"
                         ></textarea>
                         <div class="input-actions">
-                            <button class="attach-btn" id="attachBtn" title="Attach file">
+                            <button class="attach-btn" id="attachBtn" title="Attach file" data-ui-title="attach">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                                 </svg>
                             </button>
-                            <button class="send-btn" id="sendBtn" title="Send message">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <button class="send-btn" id="sendBtn" title="Send message" data-ui-title="send">
+                                <svg class="send-icon-default" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="22" y1="2" x2="11" y2="13"/>
                                     <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                                 </svg>
+                                <i class="send-icon-blood fa-solid fa-hand-holding-hand" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
-                    <p class="input-disclaimer">Tech ChatBot can make mistakes. Check important information.</p>
+                    <p class="input-disclaimer" data-ui-text="disclaimer">Tech ChatBot can make mistakes. Check important information.</p>
                 </div>
             </div>
         </main>
@@ -177,7 +220,7 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <div class="modal-header">
-                <h2>Settings</h2>
+                <h2 data-ui-text="settings">Settings</h2>
                 <button class="modal-close" id="closeSettings">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -187,68 +230,69 @@
             </div>
             <div class="modal-content">
                 <div class="settings-section">
-                    <h3>Navigation</h3>
+                    <h3 data-ui-text="navigation">Navigation</h3>
                     <div class="settings-nav-grid">
                         <a class="settings-nav-link" href="{{ landing_url }}">
-                            <span class="setting-label">Landing</span>
-                            <span class="setting-description">Quay về trang giới thiệu Thiên Vấn</span>
+                            <span class="setting-label" data-ui-text="landing">Landing</span>
+                            <span class="setting-description" data-ui-text="landingDesc">Return to the landing page</span>
                         </a>
                         <a class="settings-nav-link" href="{% url 'chat-view' %}">
-                            <span class="setting-label">Chatbot</span>
-                            <span class="setting-description">Mở lại màn hình trò chuyện</span>
+                            <span class="setting-label" data-ui-text="chatbot">Chatbot</span>
+                            <span class="setting-description" data-ui-text="chatbotDesc">Open the chat screen</span>
                         </a>
                         {% if request.user.is_staff %}
                             <a class="settings-nav-link" href="{{ manager_data_url }}">
-                                <span class="setting-label">Dữ liệu</span>
-                                <span class="setting-description">Xem dữ liệu sản phẩm JSONL</span>
+                                <span class="setting-label" data-ui-text="data">Data</span>
+                                <span class="setting-description" data-ui-text="dataDesc">View product JSONL data</span>
                             </a>
                             <a class="settings-nav-link" href="{{ manager_logs_url }}">
-                                <span class="setting-label">Chat logs</span>
-                                <span class="setting-description">Review log và hallucination</span>
+                                <span class="setting-label" data-ui-text="chatLogs">Chat logs</span>
+                                <span class="setting-description" data-ui-text="chatLogsDesc">Review logs and hallucination checks</span>
                             </a>
                             <a class="settings-nav-link" href="{{ manager_config_url }}">
-                                <span class="setting-label">RAG config</span>
-                                <span class="setting-description">Chỉnh file cấu hình hệ thống</span>
+                                <span class="setting-label" data-ui-text="ragConfig">RAG config</span>
+                                <span class="setting-description" data-ui-text="ragConfigDesc">Edit system configuration</span>
                             </a>
                             <a class="settings-nav-link" href="{{ admin_url }}">
-                                <span class="setting-label">Django admin</span>
-                                <span class="setting-description">Quản trị database và user</span>
+                                <span class="setting-label" data-ui-text="admin">Django admin</span>
+                                <span class="setting-description" data-ui-text="adminDesc">Manage database and users</span>
                             </a>
                         {% endif %}
                     </div>
                 </div>
 
                 <div class="settings-section">
-                    <h3>Appearance</h3>
+                    <h3 data-ui-text="appearance">Appearance</h3>
                     <div class="setting-item">
                         <div class="setting-info">
-                            <span class="setting-label">Dark mode</span>
-                            <span class="setting-description">Switch between light and dark themes</span>
+                            <span class="setting-label" data-ui-text="theme">Theme</span>
+                            <span class="setting-description" data-ui-text="themeDesc">Choose the chatbot color theme</span>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="darkModeToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
+                        <select id="themeSelect" class="setting-select">
+                            <option value="light" selected data-ui-text="themeLight">Light</option>
+                            <option value="dark" data-ui-text="themeDark">Dark</option>
+                            <option value="blood" data-ui-text="themeBlood">Blood red</option>
+                        </select>
                     </div>
                     <div class="setting-item">
                         <div class="setting-info">
-                            <span class="setting-label">Font size</span>
-                            <span class="setting-description">Adjust the text size</span>
+                            <span class="setting-label" data-ui-text="fontSize">Font size</span>
+                            <span class="setting-description" data-ui-text="fontSizeDesc">Adjust the text size</span>
                         </div>
                         <select id="fontSizeSelect" class="setting-select">
-                            <option value="small">Small</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="large">Large</option>
+                            <option value="small" data-ui-text="small">Small</option>
+                            <option value="medium" selected data-ui-text="medium">Medium</option>
+                            <option value="large" data-ui-text="large">Large</option>
                         </select>
                     </div>
                 </div>
                 
                 <div class="settings-section">
-                    <h3>Chat</h3>
+                    <h3 data-ui-text="chat">Chat</h3>
                     <div class="setting-item">
                         <div class="setting-info">
-                            <span class="setting-label">Save chat history</span>
-                            <span class="setting-description">Save conversations so you can review them later</span>
+                            <span class="setting-label" data-ui-text="saveHistory">Save chat history</span>
+                            <span class="setting-description" data-ui-text="saveHistoryDesc">Save conversations so you can review them later</span>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="saveHistoryToggle" checked>
@@ -257,8 +301,8 @@
                     </div>
                     <div class="setting-item">
                         <div class="setting-info">
-                            <span class="setting-label">Send with Enter</span>
-                            <span class="setting-description">Press Enter to send, or Shift+Enter for a new line</span>
+                            <span class="setting-label" data-ui-text="enterSend">Send with Enter</span>
+                            <span class="setting-description" data-ui-text="enterSendDesc">Press Enter to send, or Shift+Enter for a new line</span>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="enterSendToggle" checked>
@@ -267,32 +311,32 @@
                     </div>
                     <div class="setting-item">
                         <div class="setting-info">
-                            <span class="setting-label">Hiệu ứng kí tự</span>
-                            <span class="setting-description">Hiệu ứng xuất hiện khi Thiên Vấn hồi đáp</span>
+                            <span class="setting-label" data-ui-text="characterEffect">Character effect</span>
+                            <span class="setting-description" data-ui-text="characterEffectDesc">Effect shown while the assistant responds</span>
                         </div>
                         <select id="xianxiaSelect" class="setting-select">
-                            <option value="off">Tắt</option>
-                            <option value="seal" selected>Tu Tiên</option>
-                            <option value="decode">Giải mã</option>
+                            <option value="off" data-ui-text="off">Off</option>
+                            <option value="seal" selected data-ui-text="cultivation">Cultivation</option>
+                            <option value="decode" data-ui-text="decode">Decode</option>
                         </select>
                     </div>
                 </div>
                 
                 <div class="settings-section">
-                    <h3>Data</h3>
+                    <h3 data-ui-text="dataSection">Data</h3>
                     <div class="setting-item">
                         <div class="setting-info">
-                            <span class="setting-label">Clear all history</span>
-                            <span class="setting-description">Permanently delete every conversation</span>
+                            <span class="setting-label" data-ui-text="clearHistory">Clear all history</span>
+                            <span class="setting-description" data-ui-text="clearHistoryDesc">Permanently delete every conversation</span>
                         </div>
-                        <button class="danger-btn" id="clearHistoryBtn">Clear</button>
+                        <button class="danger-btn" id="clearHistoryBtn" data-ui-text="clear">Clear</button>
                     </div>
                     <div class="setting-item">
                         <div class="setting-info">
-                            <span class="setting-label">Export data</span>
-                            <span class="setting-description">Download all conversations</span>
+                            <span class="setting-label" data-ui-text="exportData">Export data</span>
+                            <span class="setting-description" data-ui-text="exportDataDesc">Download all conversations</span>
                         </div>
-                        <button class="secondary-btn" id="exportDataBtn">Export</button>
+                        <button class="secondary-btn" id="exportDataBtn" data-ui-text="export">Export</button>
                     </div>
                 </div>
             </div>
@@ -303,7 +347,7 @@
     <div class="modal-overlay" id="deleteModal">
         <div class="modal modal-small">
             <div class="modal-header">
-                <h2>Confirm deletion</h2>
+                <h2 data-ui-text="confirmDeletion">Confirm deletion</h2>
                 <button class="modal-close" id="closeDeleteModal">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -312,10 +356,10 @@
                 </button>
             </div>
             <div class="modal-content">
-                <p>Are you sure you want to delete this conversation?</p>
+                <p data-ui-text="deleteQuestion">Are you sure you want to delete this conversation?</p>
                 <div class="modal-actions">
-                    <button class="secondary-btn" id="cancelDelete">Cancel</button>
-                    <button class="danger-btn" id="confirmDelete">Delete</button>
+                    <button class="secondary-btn" id="cancelDelete" data-ui-text="cancel">Cancel</button>
+                    <button class="danger-btn" id="confirmDelete" data-ui-text="delete">Delete</button>
                 </div>
             </div>
         </div>

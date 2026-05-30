@@ -19,7 +19,7 @@ const sendBtn = document.getElementById('sendBtn');
 const chatContainer = document.getElementById('chatContainer');
 const welcomeScreen = document.getElementById('welcomeScreen');
 const messagesArea = document.getElementById('messagesArea');
-const darkModeToggle = document.getElementById('darkModeToggle');
+const themeSelect = document.getElementById('themeSelect');
 const fontSizeSelect = document.getElementById('fontSizeSelect');
 const saveHistoryToggle = document.getElementById('saveHistoryToggle');
 const enterSendToggle = document.getElementById('enterSendToggle');
@@ -43,6 +43,7 @@ let currentChatId = null;
 let chats = [];
 let isAwaitingResponse = false;
 let settings = {
+    theme: 'light',
     darkMode: false,
     fontSize: 'medium',
     saveHistory: true,
@@ -50,6 +51,177 @@ let settings = {
     xianxiaEffect: 'seal'
 };
 let deleteTargetId = null;
+const UI_TEXT = {
+    en: {
+        pageTitle: 'Tech ChatBot - Technology Q&A',
+        newChat: 'New chat',
+        today: 'Today',
+        week: 'Previous 7 days',
+        month: 'Previous 30 days',
+        logout: 'Logout',
+        settings: 'Settings',
+        openSidebar: 'Open sidebar',
+        brand: 'Tech ChatBot',
+        tagline: 'Your technology Q&A assistant',
+        suggestAi: 'Explain AI and machine learning',
+        suggestCompare: 'Compare Python and JavaScript',
+        suggestRoadmap: 'Create a roadmap for learning web development',
+        suggestTrends: 'Summarize current technology trends',
+        messagePlaceholder: 'Ask a technology question...',
+        attach: 'Attach file',
+        send: 'Send message',
+        disclaimer: 'Tech ChatBot can make mistakes. Check important information.',
+        navigation: 'Navigation',
+        landing: 'Landing',
+        landingDesc: 'Return to the landing page',
+        chatbot: 'Chatbot',
+        chatbotDesc: 'Open the chat screen',
+        data: 'Data',
+        dataDesc: 'View product JSONL data',
+        chatLogs: 'Chat logs',
+        chatLogsDesc: 'Review logs and hallucination checks',
+        ragConfig: 'RAG config',
+        ragConfigDesc: 'Edit system configuration',
+        admin: 'Django admin',
+        adminDesc: 'Manage database and users',
+        appearance: 'Appearance',
+        theme: 'Theme',
+        themeDesc: 'Choose the chatbot color theme',
+        themeLight: 'Light',
+        themeDark: 'Dark',
+        themeBlood: 'Blood red',
+        fontSize: 'Font size',
+        fontSizeDesc: 'Adjust the text size',
+        small: 'Small',
+        medium: 'Medium',
+        large: 'Large',
+        chat: 'Chat',
+        saveHistory: 'Save chat history',
+        saveHistoryDesc: 'Save conversations so you can review them later',
+        enterSend: 'Send with Enter',
+        enterSendDesc: 'Press Enter to send, or Shift+Enter for a new line',
+        characterEffect: 'Character effect',
+        characterEffectDesc: 'Effect shown while the assistant responds',
+        off: 'Off',
+        cultivation: 'Cultivation',
+        decode: 'Decode',
+        dataSection: 'Data',
+        clearHistory: 'Clear all history',
+        clearHistoryDesc: 'Permanently delete every conversation',
+        clear: 'Clear',
+        exportData: 'Export data',
+        exportDataDesc: 'Download all conversations',
+        export: 'Export',
+        confirmDeletion: 'Confirm deletion',
+        deleteQuestion: 'Are you sure you want to delete this conversation?',
+        cancel: 'Cancel',
+        delete: 'Delete',
+        avatarUser: 'You',
+        avatarBot: 'AI',
+        copy: 'Copy',
+        historyDelete: 'Delete',
+        loadHistoryError: 'Could not load server history. Using local history.',
+        saveHistoryError: 'Could not save history to server.',
+        clearConfirm: 'Are you sure you want to clear all chat history?',
+        allHistoryCleared: 'All history cleared',
+        fallbackError: 'Sorry, the chatbot could not answer right now.',
+        copied: 'Copied to clipboard',
+        conversationDeleted: 'Conversation deleted',
+        deleteServerError: 'Could not delete server history.',
+        clearServerError: 'Could not clear server history.',
+        dataExported: 'Data exported',
+        exportPrefix: 'tech-chatbot-export',
+        emptyResponse: 'Empty response.',
+        lowConfidenceWarning: '> ⚠️ **Note:** this answer has low confidence compared with the knowledge base. Please verify it with staff or the product page.',
+    },
+    blood: {
+        pageTitle: 'Thiên Vấn - Công Nghệ Vấn Đạo',
+        newChat: 'Tân Vấn',
+        today: 'Kim Nhật',
+        week: 'Thất Nhật Vấn Lục',
+        month: 'Tam Tuần Cựu Lục',
+        logout: 'Xuất quan',
+        settings: 'Thiết Lập',
+        openSidebar: 'Khai mục lục',
+        brand: 'Thiên Vấn',
+        tagline: 'Công nghệ vấn đạo, linh tri hồi đáp',
+        suggestAi: 'Luận giải AI và machine learning',
+        suggestCompare: 'So sánh Python và JavaScript',
+        suggestRoadmap: 'Lập đạo lộ tu học web development',
+        suggestTrends: 'Tổng luận xu thế công nghệ hiện thời',
+        messagePlaceholder: 'Nhập nghi vấn công nghệ...',
+        attach: 'Phụ đính hồ sơ',
+        send: 'Truyền vấn',
+        disclaimer: 'Thiên Vấn khả hữu sai lệch. Đại sự cần tự thân kiểm chứng.',
+        navigation: 'Đạo Lộ',
+        landing: 'Tiên Môn',
+        landingDesc: 'Quay về cổng giới thiệu Thiên Vấn',
+        chatbot: 'Vấn Đạo',
+        chatbotDesc: 'Mở lại pháp đàn đối thoại',
+        data: 'Dữ Liệu',
+        dataDesc: 'Duyệt sản phẩm JSONL',
+        chatLogs: 'Vấn Lục',
+        chatLogsDesc: 'Duyệt log và ảo giác hồi đáp',
+        ragConfig: 'RAG Pháp Cấu',
+        ragConfigDesc: 'Chỉnh pháp cấu hệ thống',
+        admin: 'Quản Trị Đài',
+        adminDesc: 'Quản trị database và đạo hữu',
+        appearance: 'Sắc Giới',
+        theme: 'Khí Sắc',
+        themeDesc: 'Chọn linh cảnh hiển thị của Thiên Vấn',
+        themeLight: 'Thanh Minh',
+        themeDark: 'Huyền Dạ',
+        themeBlood: 'Huyết Sắc',
+        fontSize: 'Cỡ Tự',
+        fontSizeDesc: 'Điều chỉnh văn tự hiển thị',
+        small: 'Tiểu',
+        medium: 'Trung',
+        large: 'Đại',
+        chat: 'Vấn Đáp',
+        saveHistory: 'Lưu Vấn Lục',
+        saveHistoryDesc: 'Lưu hội thoại để hồi cố về sau',
+        enterSend: 'Enter Truyền Vấn',
+        enterSendDesc: 'Nhấn Enter để gửi, Shift+Enter để xuống dòng',
+        characterEffect: 'Phù Tự Hiển Hóa',
+        characterEffectDesc: 'Hiệu ứng văn tự khi Thiên Vấn hồi đáp',
+        off: 'Tắt',
+        cultivation: 'Tu Tiên',
+        decode: 'Giải mã',
+        dataSection: 'Vấn Lục',
+        clearHistory: 'Tẩy Vấn Lục',
+        clearHistoryDesc: 'Xóa vĩnh viễn toàn bộ hội thoại',
+        clear: 'Tẩy',
+        exportData: 'Xuất Dữ Liệu',
+        exportDataDesc: 'Tải xuống toàn bộ hội thoại',
+        export: 'Xuất',
+        confirmDeletion: 'Xác Nhận Xóa',
+        deleteQuestion: 'Đạo hữu chắc muốn xóa đoạn vấn đáp này?',
+        cancel: 'Hủy',
+        delete: 'Xóa',
+        avatarUser: 'Ngã',
+        avatarBot: 'Thiên',
+        copy: 'Sao lục',
+        historyDelete: 'Xóa vấn lục',
+        loadHistoryError: 'Không tải được vấn lục máy chủ. Tạm dùng vấn lục cục bộ.',
+        saveHistoryError: 'Không lưu được vấn lục lên máy chủ.',
+        clearConfirm: 'Đạo hữu chắc muốn tẩy toàn bộ vấn lục?',
+        allHistoryCleared: 'Đã tẩy toàn bộ vấn lục',
+        fallbackError: 'Thiên Vấn nhất thời chưa thể hồi đáp.',
+        copied: 'Đã sao lục vào clipboard',
+        conversationDeleted: 'Đã xóa đoạn vấn đáp',
+        deleteServerError: 'Không xóa được vấn lục máy chủ.',
+        clearServerError: 'Không tẩy được vấn lục máy chủ.',
+        dataExported: 'Đã xuất dữ liệu',
+        exportPrefix: 'thien-van-van-luc',
+        emptyResponse: 'Không có hồi đáp.',
+        lowConfidenceWarning: '> ⚠️ **Lưu ý:** câu trả lời này có độ tin cậy thấp so với dữ liệu trong kho. Vui lòng đối chiếu thêm với nhân viên hoặc trang sản phẩm.',
+    },
+};
+
+function textFor(key) {
+    const language = settings.theme === 'blood' ? 'blood' : 'en';
+    return UI_TEXT[language][key] || UI_TEXT.en[key] || key;
+}
 
 // Initialize
 async function init() {
@@ -68,9 +240,20 @@ async function init() {
 // Load settings from localStorage
 function loadSettings() {
     const savedSettings = localStorage.getItem('techChatSettings');
+    let savedSettingsObject = {};
     if (savedSettings) {
-        settings = { ...settings, ...JSON.parse(savedSettings) };
+        savedSettingsObject = JSON.parse(savedSettings);
+        settings = { ...settings, ...savedSettingsObject };
     }
+    if (!Object.prototype.hasOwnProperty.call(savedSettingsObject, 'theme')) {
+        settings.theme = settings.darkMode ? 'dark' : 'light';
+        saveSettings();
+    }
+    if (!['light', 'dark', 'blood'].includes(settings.theme)) {
+        settings.theme = 'light';
+        saveSettings();
+    }
+    settings.darkMode = settings.theme === 'dark';
     // Migrate old boolean xianxiaEffect → string
     if (typeof settings.xianxiaEffect === 'boolean') {
         settings.xianxiaEffect = settings.xianxiaEffect ? 'seal' : 'off';
@@ -89,14 +272,14 @@ function saveSettings() {
 
 // Apply settings to UI
 function applySettings() {
-    // Dark mode
-    if (settings.darkMode) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        darkModeToggle.checked = true;
-    } else {
+    // Theme
+    if (settings.theme === 'light') {
         document.documentElement.removeAttribute('data-theme');
-        darkModeToggle.checked = false;
+    } else {
+        document.documentElement.setAttribute('data-theme', settings.theme);
     }
+    settings.darkMode = settings.theme === 'dark';
+    themeSelect.value = settings.theme;
     
     // Font size
     document.documentElement.setAttribute('data-font-size', settings.fontSize);
@@ -106,6 +289,44 @@ function applySettings() {
     saveHistoryToggle.checked = settings.saveHistory;
     enterSendToggle.checked = settings.enterSend;
     xianxiaSelect.value = settings.xianxiaEffect;
+    applyThemeLanguage();
+}
+
+function applyThemeLanguage() {
+    document.title = textFor('pageTitle');
+
+    document.querySelectorAll('[data-ui-text]').forEach((element) => {
+        element.textContent = textFor(element.dataset.uiText);
+    });
+
+    document.querySelectorAll('[data-ui-title]').forEach((element) => {
+        const value = textFor(element.dataset.uiTitle);
+        element.title = value;
+        if (element.hasAttribute('aria-label')) {
+            element.setAttribute('aria-label', value);
+        }
+    });
+
+    document.querySelectorAll('[data-ui-placeholder]').forEach((element) => {
+        element.placeholder = textFor(element.dataset.uiPlaceholder);
+    });
+
+    document.querySelectorAll('[data-ui-prompt]').forEach((element) => {
+        element.dataset.prompt = textFor(element.dataset.uiPrompt);
+    });
+
+    document.querySelectorAll('.message.user .message-avatar').forEach((avatar) => {
+        avatar.textContent = textFor('avatarUser');
+    });
+    document.querySelectorAll('.message.bot .message-avatar').forEach((avatar) => {
+        avatar.textContent = textFor('avatarBot');
+    });
+    document.querySelectorAll('.message-action-btn').forEach((button) => {
+        button.title = textFor('copy');
+    });
+    document.querySelectorAll('.history-action-btn.delete').forEach((button) => {
+        button.title = textFor('historyDelete');
+    });
 }
 
 function getCsrfToken() {
@@ -208,7 +429,7 @@ async function loadChats() {
         localStorage.setItem(chatHistoryStorageKey, JSON.stringify(chats));
     } catch (error) {
         chats = normalizeChats(localChats);
-        showToast('Could not load server history. Using local history.', 'error');
+        showToast(textFor('loadHistoryError'), 'error');
     }
 }
 
@@ -233,7 +454,7 @@ async function saveChats() {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
     } catch (error) {
-        showToast('Could not save history to server.', 'error');
+        showToast(textFor('saveHistoryError'), 'error');
     }
 }
 
@@ -287,7 +508,7 @@ function createHistoryItemHTML(chat) {
         <div class="history-item ${isActive}" data-id="${chat.id}">
             <span class="history-item-title">${escapeHtml(chat.title)}</span>
             <div class="history-item-actions">
-                <button class="history-action-btn delete" data-id="${chat.id}" title="Delete">
+                <button class="history-action-btn delete" data-id="${chat.id}" title="${escapeHtml(textFor('historyDelete'))}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -351,8 +572,9 @@ function setupEventListeners() {
     });
     
     // Settings changes
-    darkModeToggle.addEventListener('change', () => {
-        settings.darkMode = darkModeToggle.checked;
+    themeSelect.addEventListener('change', () => {
+        settings.theme = themeSelect.value;
+        settings.darkMode = settings.theme === 'dark';
         applySettings();
         saveSettings();
     });
@@ -379,14 +601,14 @@ function setupEventListeners() {
     });
     
     clearHistoryBtn.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to clear all chat history?')) {
+        if (confirm(textFor('clearConfirm'))) {
             chats = [];
             localStorage.removeItem(chatHistoryStorageKey);
             localStorage.removeItem(activeChatStorageKey);
             await clearServerHistory();
             renderChatHistory();
             startNewChat();
-            showToast('All history cleared', 'success');
+            showToast(textFor('allHistoryCleared'), 'success');
         }
     });
     
@@ -466,7 +688,7 @@ function loadChat(chatId) {
 // Create message HTML
 function createMessageHTML(message) {
     const isUser = message.role === 'user';
-    const avatarContent = isUser ? 'You' : 'AI';
+    const avatarContent = isUser ? textFor('avatarUser') : textFor('avatarBot');
     
     return `
         <div class="message ${message.role}">
@@ -474,7 +696,7 @@ function createMessageHTML(message) {
             <div class="message-content">
                 ${formatMessageContent(message.content)}
                 <div class="message-actions">
-                    <button class="message-action-btn" onclick="copyMessage(this)" title="Copy">
+                    <button class="message-action-btn" onclick="copyMessage(this)" title="${escapeHtml(textFor('copy'))}">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -719,7 +941,7 @@ function showTypingIndicator() {
     indicator.className = 'message bot';
     indicator.id = 'typingIndicator';
     indicator.innerHTML = `
-        <div class="message-avatar">AI</div>
+        <div class="message-avatar">${escapeHtml(textFor('avatarBot'))}</div>
         <div class="message-content">
             <div class="typing-indicator">
                 <span></span>
@@ -1125,9 +1347,9 @@ async function getBotResponse(userMessage) {
             throw new Error(errorMessage);
         }
 
-        let finalContent = accumulated.trim() || 'Empty response.';
+        let finalContent = accumulated.trim() || textFor('emptyResponse');
         if (lowConfidence) {
-            finalContent += '\n\n> ⚠️ **Lưu ý:** câu trả lời này có độ tin cậy thấp so với dữ liệu trong kho. Vui lòng đối chiếu thêm với nhân viên hoặc trang sản phẩm.';
+            finalContent += `\n\n${textFor('lowConfidenceWarning')}`;
         }
         isStreamingForDecode = false;
         if (settings.xianxiaEffect === 'decode') {
@@ -1162,7 +1384,7 @@ async function getBotResponse(userMessage) {
     } catch (error) {
         isStreamingForDecode = false;
         resetDecodeState();
-        const text = `Sorry, the chatbot could not answer right now.\n\n${error.message}`;
+        const text = `${textFor('fallbackError')}\n\n${error.message}`;
         renderInto(text);
         const chat = chats.find(c => c.id === currentChatId);
         if (chat) {
@@ -1205,7 +1427,7 @@ function copyMessage(btn) {
         || messageContent.querySelector('p');
     const content = contentEl ? contentEl.innerText : '';
     navigator.clipboard.writeText(content).then(() => {
-        showToast('Copied to clipboard', 'success');
+        showToast(textFor('copied'), 'success');
     });
 }
 
@@ -1233,7 +1455,7 @@ async function deleteChat(chatId) {
         startNewChat();
     }
     
-    showToast('Conversation deleted', 'success');
+    showToast(textFor('conversationDeleted'), 'success');
 }
 
 async function deleteServerChat(chatId) {
@@ -1248,7 +1470,7 @@ async function deleteServerChat(chatId) {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
     } catch (error) {
-        showToast('Could not delete server history.', 'error');
+        showToast(textFor('deleteServerError'), 'error');
     }
 }
 
@@ -1264,7 +1486,7 @@ async function clearServerHistory() {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
     } catch (error) {
-        showToast('Could not clear server history.', 'error');
+        showToast(textFor('clearServerError'), 'error');
     }
 }
 
@@ -1281,11 +1503,11 @@ function exportData() {
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tech-chatbot-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `${textFor('exportPrefix')}-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     
     URL.revokeObjectURL(url);
-    showToast('Data exported', 'success');
+    showToast(textFor('dataExported'), 'success');
 }
 
 // Show toast notification

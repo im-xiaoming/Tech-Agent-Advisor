@@ -149,6 +149,63 @@ body {
     --portal-flare: #fff1f7;
 }
 
+.landing-page.video-theme-3 {
+    --scene-bg-a: #170104;
+    --scene-bg-b: #32050a;
+    --scene-bg-c: #050102;
+    --scene-core-glow: rgba(210, 16, 32, 0.26);
+    --wash-left: rgba(18, 0, 3, 0.66);
+    --wash-mid: rgba(93, 5, 13, 0.34);
+    --wash-right: rgba(12, 0, 2, 0.68);
+    --wash-top: rgba(24, 0, 4, 0.08);
+    --wash-bottom: rgba(18, 0, 3, 0.62);
+    --wash-gold: rgba(196, 21, 31, 0.25);
+    --wash-accent-a: rgba(255, 40, 56, 0.24);
+    --wash-accent-b: rgba(138, 0, 14, 0.2);
+    --vignette-bottom: rgba(20, 0, 3, 0.42);
+    --vignette-edge: rgba(0, 0, 0, 0.36);
+    --grid-line-a: rgba(255, 211, 211, 0.052);
+    --grid-line-b: rgba(255, 57, 73, 0.042);
+    --mist-color: rgba(255, 112, 120, 0.44);
+    --mountain-a: rgba(83, 5, 13, 0.78);
+    --mountain-b: rgba(16, 1, 4, 0.95);
+    --mountain-glow: rgba(211, 18, 35, 0.18);
+    --ring-border: rgba(255, 93, 102, 0.6);
+    --ring-glow: rgba(225, 17, 34, 0.42);
+    --ring-inner: rgba(255, 191, 128, 0.18);
+    --blade-mid: #e7172f;
+    --blade-end: #230207;
+    --blade-glow: rgba(232, 22, 43, 0.62);
+    --metal-gold: #b98547;
+    --jade-bright: #ffe9e9;
+    --jade-mid: #ff3448;
+    --jade-dark: #7a0715;
+    --jade-glow: rgba(255, 34, 52, 0.78);
+    --seal-start: #ffb4b8;
+    --seal-end: #b10a1a;
+    --hero-title: #fff2e7;
+    --hero-glow: rgba(255, 32, 48, 0.52);
+    --hero-copy: rgba(255, 235, 226, 0.9);
+    --button-start: #ffd0c0;
+    --button-mid: #d81328;
+    --button-end: #6d0611;
+    --button-glow: rgba(230, 21, 39, 0.5);
+    --button-hover-glow: rgba(255, 53, 69, 0.56);
+    --lotus-core-a: rgba(255, 70, 82, 0.58);
+    --lotus-core-b: rgba(128, 4, 15, 0.12);
+    --lotus-glow: rgba(230, 21, 39, 0.42);
+    --lotus-border: rgba(255, 122, 130, 0.52);
+    --lotus-fill: rgba(221, 17, 34, 0.2);
+    --portal-bg-a: rgba(255, 118, 126, 0.42);
+    --portal-bg-b: rgba(180, 4, 20, 0.28);
+    --portal-bg-c: rgba(10, 0, 2, 0.92);
+    --portal-border: rgba(255, 112, 120, 0.78);
+    --portal-glow: rgba(232, 22, 43, 0.56);
+    --portal-inner: rgba(255, 196, 128, 0.28);
+    --portal-middle: rgba(255, 61, 76, 0.8);
+    --portal-flare: #ffe5df;
+}
+
 .landing-video,
 .video-wash,
 .three-canvas {
@@ -175,6 +232,10 @@ body {
 
 .video-theme-2 .landing-video.is-active {
     filter: saturate(1.14) contrast(1.04) brightness(0.98);
+}
+
+.video-theme-3 .landing-video.is-active {
+    filter: saturate(1.22) contrast(1.12) brightness(0.86);
 }
 
 .video-wash {
@@ -752,6 +813,10 @@ body {
 
     .video-theme-2 .landing-video.is-active {
         filter: saturate(1.12) contrast(1.03) brightness(0.9);
+    }
+
+    .video-theme-3 .landing-video.is-active {
+        filter: saturate(1.16) contrast(1.1) brightness(0.8);
     }
 
     .three-canvas {

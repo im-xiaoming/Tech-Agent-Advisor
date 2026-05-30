@@ -1,3 +1,9 @@
+@font-face {
+    font-family: "TP Han Zi";
+    src: url("/static/fonts/TP%20Han%20Zi.ttf") format("truetype");
+    font-display: swap;
+}
+
 /* CSS Variables */
 :root {
     /* Light theme */
@@ -10,6 +16,7 @@
     --text-tertiary: #9ca3af;
     --border-color: #e5e7eb;
     --accent-color: #000000;
+    --accent-contrast: #ffffff;
     --accent-hover: #1f2937;
     --danger-color: #ef4444;
     --danger-hover: #dc2626;
@@ -34,6 +41,7 @@
     --text-tertiary: #9ca3af;
     --border-color: #3f3f3f;
     --accent-color: #ffffff;
+    --accent-contrast: #0f0f0f;
     --accent-hover: #e5e7eb;
     --message-user-bg: #262626;
     --message-bot-bg: #171717;
@@ -41,6 +49,30 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+/* Blood red theme */
+[data-theme="blood"] {
+    --bg-primary: #150104;
+    --bg-secondary: #210307;
+    --bg-tertiary: #33060b;
+    --bg-hover: #4a0a12;
+    --text-primary: #fff3ed;
+    --text-secondary: #f3c8be;
+    --text-tertiary: #c98782;
+    --border-color: #5c1018;
+    --accent-color: #d81428;
+    --accent-contrast: #fff5ef;
+    --accent-hover: #ff3348;
+    --danger-color: #ff4458;
+    --danger-hover: #e11d32;
+    --success-color: #f0b35a;
+    --message-user-bg: #2c050a;
+    --message-bot-bg: #1b0205;
+    --input-bg: #240408;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.42);
+    --shadow-md: 0 4px 10px -2px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 14px 24px -6px rgba(0, 0, 0, 0.58);
 }
 
 /* Font size variations */
@@ -75,12 +107,434 @@ body {
     overflow: hidden;
 }
 
+[data-theme="blood"] body {
+    font-family: "TP Han Zi", 'Inter', 'Segoe UI', Arial, sans-serif;
+    background:
+        linear-gradient(135deg, #110104, #250306 48%, #070102),
+        var(--bg-primary);
+}
+
 /* App Container */
 .app-container {
     display: flex;
     height: 100vh;
     width: 100%;
     position: relative;
+    isolation: isolate;
+    perspective: 1200px;
+}
+
+.cultivation-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transform-style: preserve-3d;
+    transition: opacity 320ms ease;
+}
+
+[data-theme="blood"] .cultivation-backdrop {
+    opacity: 1;
+    background: #160004;
+}
+
+.blood-image-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        linear-gradient(90deg, rgba(8, 0, 2, 0.12), rgba(32, 2, 7, 0.02) 50%, rgba(8, 0, 2, 0.16)),
+        linear-gradient(to bottom, rgba(8, 0, 2, 0), rgba(8, 0, 2, 0.18)),
+        url("/static/chat/images/blood.jpg") center / cover no-repeat;
+    filter: brightness(0.9) contrast(0.94) saturate(0.88);
+    opacity: 0;
+    transform: scale(1.02);
+    transition: opacity 320ms ease;
+}
+
+[data-theme="blood"] .blood-image-layer {
+    opacity: 0.26;
+}
+
+.cultivation-backdrop::before,
+.cultivation-backdrop::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: -18%;
+    background:
+        linear-gradient(90deg, rgba(255, 41, 58, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(255, 198, 178, 0.045) 1px, transparent 1px);
+    background-size: 84px 84px;
+    transform: rotateX(68deg) translateY(18vh) translateZ(-120px);
+    transform-origin: center bottom;
+    animation: cultivationGridDrift 18s linear infinite;
+}
+
+.cultivation-backdrop::after {
+    inset: 0;
+    z-index: 2;
+    background:
+        linear-gradient(90deg, rgba(18, 0, 3, 0.2), rgba(63, 4, 10, 0.04) 48%, rgba(9, 0, 2, 0.22)),
+        linear-gradient(to bottom, rgba(8, 0, 2, 0), rgba(8, 0, 2, 0.18));
+    transform: translateZ(20px);
+    animation: none;
+}
+
+.blood-mist,
+.arcane-ring,
+.curse-talisman,
+.demon-skull,
+.talisman-field {
+    position: absolute;
+    z-index: 3;
+}
+
+.blood-mist {
+    width: 76vw;
+    height: 24vh;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(255, 75, 84, 0.22), transparent);
+    filter: blur(22px);
+    opacity: 0.62;
+    animation: bloodMistFlow 17s ease-in-out infinite;
+}
+
+.mist-left {
+    left: -28vw;
+    top: 18vh;
+}
+
+.mist-right {
+    right: -28vw;
+    bottom: 14vh;
+    animation-delay: -8s;
+}
+
+.arcane-ring {
+    border: 1px solid rgba(255, 91, 103, 0.5);
+    border-radius: 50%;
+    box-shadow:
+        0 0 26px rgba(216, 20, 40, 0.34),
+        inset 0 0 34px rgba(255, 179, 92, 0.12);
+    transform-style: preserve-3d;
+    animation: arcaneRingSpin 9s linear infinite;
+}
+
+.arcane-ring::before,
+.arcane-ring::after {
+    content: "";
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.ring-prime {
+    width: min(36vw, 420px);
+    height: min(36vw, 420px);
+    right: 8vw;
+    top: 12vh;
+    transform: rotateX(70deg) rotateZ(16deg) translateZ(50px);
+}
+
+.ring-prime::before {
+    background:
+        radial-gradient(circle at 50% 27%, rgba(16, 1, 4, 0.96) 0 7%, transparent 7.6%),
+        radial-gradient(circle at 50% 73%, rgba(255, 105, 112, 0.76) 0 7%, transparent 7.6%),
+        radial-gradient(circle at 50% 27%, rgba(255, 105, 112, 0.6) 0 22%, transparent 22.6%),
+        radial-gradient(circle at 50% 73%, rgba(12, 0, 3, 0.9) 0 22%, transparent 22.6%),
+        conic-gradient(from 90deg, rgba(18, 1, 4, 0.84) 0 50%, rgba(255, 83, 93, 0.42) 0 100%);
+    border: 1px solid rgba(255, 139, 132, 0.24);
+    box-shadow:
+        inset 0 0 18px rgba(255, 184, 112, 0.08),
+        0 0 22px rgba(216, 20, 40, 0.18);
+    opacity: 0.74;
+}
+
+.ring-prime::after {
+    inset: 5%;
+    background:
+        repeating-conic-gradient(from 0deg, rgba(255, 187, 110, 0.24) 0 3deg, transparent 3deg 22.5deg),
+        radial-gradient(circle, transparent 0 62%, rgba(255, 91, 103, 0.18) 63% 65%, transparent 66%);
+    opacity: 0.56;
+}
+
+.ring-second {
+    width: min(28vw, 300px);
+    height: min(28vw, 300px);
+    left: 14vw;
+    bottom: 16vh;
+    border-color: rgba(255, 183, 116, 0.42);
+    animation-duration: 6.8s;
+    animation-direction: reverse;
+    transform: rotateX(72deg) rotateZ(-22deg) translateZ(70px);
+}
+
+.ring-second::before {
+    inset: 8%;
+    background:
+        repeating-conic-gradient(from 11.25deg, rgba(255, 192, 116, 0.32) 0 4deg, transparent 4deg 18deg, rgba(255, 78, 91, 0.2) 18deg 22deg, transparent 22deg 45deg),
+        radial-gradient(circle, transparent 0 48%, rgba(255, 183, 116, 0.18) 49% 51%, transparent 52% 100%);
+    border: 1px solid rgba(255, 183, 116, 0.22);
+    opacity: 0.62;
+}
+
+.ring-second::after {
+    inset: 24%;
+    background:
+        linear-gradient(rgba(255, 205, 139, 0.24), rgba(255, 205, 139, 0.24)) 50% 0 / 2px 100% no-repeat,
+        linear-gradient(90deg, rgba(255, 205, 139, 0.24), rgba(255, 205, 139, 0.24)) 0 50% / 100% 2px no-repeat,
+        conic-gradient(from 45deg, transparent 0 12%, rgba(255, 78, 91, 0.14) 12% 16%, transparent 16% 37%, rgba(255, 78, 91, 0.14) 37% 41%, transparent 41% 100%);
+    border: 1px solid rgba(255, 91, 103, 0.2);
+    opacity: 0.58;
+}
+
+.curse-talisman {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    min-height: 142px;
+    padding: 12px 7px;
+    color: rgba(255, 230, 188, 0.68);
+    background:
+        linear-gradient(180deg, rgba(120, 9, 18, 0.58), rgba(50, 3, 9, 0.78)),
+        linear-gradient(90deg, transparent 0 12%, rgba(255, 188, 88, 0.18) 12% 16%, transparent 16% 84%, rgba(255, 188, 88, 0.18) 84% 88%, transparent 88%);
+    border: 1px solid rgba(255, 117, 70, 0.22);
+    box-shadow:
+        0 0 24px rgba(216, 20, 40, 0.16),
+        inset 0 0 18px rgba(255, 179, 92, 0.08);
+    font-family: "TP Han Zi", "KaiTi", "STKaiti", "DFKai-SB", serif;
+    font-size: 22px;
+    line-height: 1.12;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-shadow:
+        0 0 8px rgba(255, 75, 84, 0.34),
+        1px 0 0 rgba(86, 3, 12, 0.52);
+    opacity: 0.52;
+    transform-style: preserve-3d;
+    animation: talismanSway 8s ease-in-out infinite;
+}
+
+.curse-talisman::before,
+.curse-talisman::after {
+    content: "";
+    position: absolute;
+    right: 8px;
+    left: 8px;
+    height: 1px;
+    background: rgba(255, 185, 93, 0.32);
+}
+
+.curse-talisman::before {
+    top: 8px;
+}
+
+.curse-talisman::after {
+    bottom: 8px;
+}
+
+.curse-talisman span {
+    display: block;
+    width: 1em;
+    text-align: center;
+    transform: rotate(4deg);
+}
+
+.talisman-center {
+    left: 50%;
+    top: 50%;
+    z-index: 2;
+    width: 62px;
+    min-height: 188px;
+    color: rgba(255, 236, 204, 0.82);
+    border-color: rgba(255, 174, 91, 0.34);
+    background:
+        radial-gradient(ellipse at 50% 18%, rgba(255, 190, 97, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(128, 9, 20, 0.46), rgba(42, 3, 8, 0.64)),
+        linear-gradient(90deg, transparent 0 10%, rgba(255, 196, 101, 0.22) 10% 15%, transparent 15% 85%, rgba(255, 196, 101, 0.22) 85% 90%, transparent 90%);
+    box-shadow:
+        0 0 36px rgba(216, 20, 40, 0.24),
+        0 0 70px rgba(255, 179, 92, 0.1),
+        inset 0 0 24px rgba(255, 179, 92, 0.12);
+    font-size: 25px;
+    opacity: 0.48;
+    animation-duration: 7s;
+    transform: translate(-50%, -50%) rotateZ(-2deg) translateZ(130px);
+}
+
+.talisman-a {
+    left: 12vw;
+    top: 28vh;
+    transform: rotateZ(-9deg) translateZ(90px);
+}
+
+.talisman-b {
+    right: 9vw;
+    top: 34vh;
+    min-height: 126px;
+    opacity: 0.44;
+    animation-delay: -3s;
+    transform: rotateZ(8deg) translateZ(70px);
+}
+
+.talisman-c {
+    left: 58vw;
+    bottom: 9vh;
+    min-height: 118px;
+    opacity: 0.38;
+    animation-delay: -5.5s;
+    transform: rotateZ(4deg) translateZ(60px);
+}
+
+.demon-skull {
+    width: 64px;
+    height: 58px;
+    border-radius: 45% 45% 42% 42%;
+    background:
+        radial-gradient(circle at 32% 38%, rgba(255, 60, 77, 0.8) 0 4px, transparent 5px),
+        radial-gradient(circle at 68% 38%, rgba(255, 60, 77, 0.8) 0 4px, transparent 5px),
+        radial-gradient(ellipse at 50% 82%, rgba(18, 1, 4, 0.78) 0 5px, transparent 6px),
+        linear-gradient(180deg, rgba(255, 204, 174, 0.2), rgba(94, 6, 16, 0.38));
+    border: 1px solid rgba(255, 102, 112, 0.28);
+    box-shadow:
+        0 0 24px rgba(216, 20, 40, 0.22),
+        inset 0 0 18px rgba(255, 216, 182, 0.08);
+    opacity: 0.34;
+    transform-style: preserve-3d;
+    animation: skullHover 9s ease-in-out infinite;
+}
+
+.demon-skull::before,
+.demon-skull::after {
+    content: "";
+    position: absolute;
+    top: -11px;
+    width: 20px;
+    height: 22px;
+    border-top: 2px solid rgba(255, 120, 128, 0.34);
+    border-radius: 70% 30% 0 0;
+}
+
+.demon-skull::before {
+    left: 4px;
+    transform: rotate(-32deg);
+}
+
+.demon-skull::after {
+    right: 4px;
+    transform: rotate(32deg);
+}
+
+.demon-skull i {
+    position: absolute;
+    right: 19px;
+    bottom: 10px;
+    left: 19px;
+    display: block;
+    height: 7px;
+    border-top: 1px solid rgba(255, 184, 154, 0.28);
+    border-bottom: 1px solid rgba(255, 184, 154, 0.18);
+}
+
+.skull-a {
+    right: 18vw;
+    top: 22vh;
+    transform: rotateZ(-7deg) translateZ(80px);
+}
+
+.skull-b {
+    left: 22vw;
+    bottom: 20vh;
+    width: 52px;
+    height: 48px;
+    opacity: 0.26;
+    animation-delay: -4s;
+    transform: rotateZ(11deg) translateZ(50px);
+}
+
+.skull-c {
+    right: 42vw;
+    bottom: 12vh;
+    width: 44px;
+    height: 41px;
+    opacity: 0.2;
+    animation-delay: -6.5s;
+    transform: rotateZ(4deg) translateZ(40px);
+}
+
+.talisman-field {
+    inset: 0;
+    transform-style: preserve-3d;
+}
+
+.talisman-field span {
+    position: absolute;
+    color: rgba(255, 191, 180, 0.18);
+    font-family: "TP Han Zi", 'Inter', sans-serif;
+    font-size: clamp(36px, 6vw, 92px);
+    text-shadow: 0 0 22px rgba(255, 42, 58, 0.28);
+    animation: talismanFloat 10s ease-in-out infinite;
+}
+
+.talisman-field span:nth-child(1) { left: 18vw; top: 11vh; animation-delay: -1s; }
+.talisman-field span:nth-child(2) { left: 79vw; top: 19vh; animation-delay: -3s; }
+.talisman-field span:nth-child(3) { left: 7vw; top: 70vh; animation-delay: -5s; }
+.talisman-field span:nth-child(4) { left: 54vw; top: 80vh; animation-delay: -2s; }
+.talisman-field span:nth-child(5) { left: 37vw; top: 8vh; animation-delay: -6s; }
+.talisman-field span:nth-child(6) { left: 86vw; top: 64vh; animation-delay: -4s; }
+
+.talisman-field .sanskrit-glyph {
+    color: rgba(255, 224, 198, 0.26);
+    font-family: "Nirmala UI", "Mangal", "Segoe UI", sans-serif;
+    font-size: clamp(32px, 5.2vw, 86px);
+    letter-spacing: 0;
+    text-shadow:
+        0 0 18px rgba(255, 214, 184, 0.28),
+        0 0 34px rgba(255, 179, 92, 0.26),
+        0 0 48px rgba(216, 20, 40, 0.26);
+    animation-name: sanskritGlyphFloat;
+}
+
+.talisman-field span:nth-child(7) { left: 27vw; top: 30vh; animation-delay: -7s; }
+.talisman-field span:nth-child(8) { left: 69vw; top: 12vh; animation-delay: -4.5s; }
+.talisman-field span:nth-child(9) { left: 73vw; top: 47vh; animation-delay: -8s; }
+.talisman-field span:nth-child(10) { left: 18vw; top: 84vh; animation-delay: -5.5s; }
+.talisman-field span:nth-child(11) { left: 43vw; top: 61vh; animation-delay: -9s; }
+.talisman-field span:nth-child(12) { left: 91vw; top: 33vh; animation-delay: -6.5s; }
+.talisman-field span:nth-child(13) { left: 10vw; top: 45vh; animation-delay: -10s; }
+.talisman-field span:nth-child(14) { left: 32vw; top: 72vh; animation-delay: -7.5s; }
+.talisman-field span:nth-child(15) { left: 58vw; top: 24vh; animation-delay: -11s; }
+.talisman-field span:nth-child(16) { left: 76vw; top: 85vh; animation-delay: -8.5s; }
+.talisman-field span:nth-child(17) { left: 5vw; top: 20vh; animation-delay: -12s; }
+.talisman-field span:nth-child(18) { left: 90vw; top: 76vh; animation-delay: -9.5s; }
+
+.sidebar,
+.main-content {
+    position: relative;
+    z-index: 1;
+}
+
+[data-theme="blood"] .sidebar {
+    background-color: rgba(33, 3, 7, 0.72);
+    border-right-color: rgba(255, 91, 103, 0.28);
+    box-shadow: 18px 0 46px rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(14px);
+}
+
+[data-theme="blood"] .main-content {
+    background-color: rgba(21, 1, 4, 0.14);
+}
+
+[data-theme="blood"] .mobile-header,
+[data-theme="blood"] .input-area {
+    background-color: rgba(21, 1, 4, 0.5);
+    backdrop-filter: blur(12px);
 }
 
 /* Sidebar */
@@ -117,7 +571,7 @@ body {
     gap: 8px;
     padding: 12px 16px;
     background-color: var(--accent-color);
-    color: var(--bg-primary);
+    color: var(--accent-contrast);
     border: none;
     border-radius: 8px;
     font-size: 14px;
@@ -541,7 +995,7 @@ body {
 
 .message.user .message-avatar {
     background-color: var(--accent-color);
-    color: var(--bg-primary);
+    color: var(--accent-contrast);
 }
 
 .message.bot .message-avatar {
@@ -550,6 +1004,7 @@ body {
 }
 
 .message-content {
+    position: relative;
     flex: 1;
     min-width: 0;
 }
@@ -560,11 +1015,64 @@ body {
 }
 
 .message.user .message-markdown {
+    position: relative;
     padding: 12px 16px;
     background-color: var(--message-user-bg);
-    border: 1px solid var(--border-color);
+    border: var(--message-user-border-width, 1px) solid var(--border-color);
     border-radius: 16px 4px 16px 16px;
     box-shadow: var(--shadow-sm);
+}
+
+[data-theme="blood"] .message.user .message-markdown {
+    --message-user-border-width: 2px;
+    overflow: visible;
+    border-color: rgba(204, 45, 55, 0.72);
+    background:
+        radial-gradient(ellipse at 24% 100%, rgba(120, 4, 16, 0.46), transparent 32%),
+        radial-gradient(ellipse at 72% 100%, rgba(120, 4, 16, 0.42), transparent 34%),
+        linear-gradient(90deg, transparent 8%, rgba(163, 10, 24, 0.8) 18%, rgba(226, 31, 45, 0.78) 23%, rgba(96, 3, 14, 0.46) 33%, transparent 42%, rgba(113, 4, 16, 0.68) 62%, rgba(230, 36, 50, 0.72) 72%, rgba(87, 3, 12, 0.42) 84%, transparent 95%) left bottom / 100% 3px no-repeat,
+        linear-gradient(180deg, rgba(64, 7, 13, 0.96), rgba(28, 3, 7, 0.98)),
+        var(--message-user-bg);
+    box-shadow:
+        var(--shadow-sm),
+        inset 0 0 0 1px rgba(255, 104, 112, 0.08),
+        inset 0 -10px 18px rgba(96, 3, 14, 0.38),
+        0 0 16px rgba(216, 20, 40, 0.16);
+}
+
+[data-theme="blood"] .message.user .message-markdown::before,
+[data-theme="blood"] .message.user .message-markdown::after {
+    content: "";
+    position: absolute;
+    bottom: -28px;
+    z-index: 1;
+    width: 2px;
+    height: 28px;
+    border-radius: 0 0 999px 999px;
+    background: linear-gradient(180deg, rgba(235, 39, 53, 0.92), rgba(106, 3, 14, 0.82) 74%, transparent);
+    filter: drop-shadow(0 0 4px rgba(216, 20, 40, 0.38));
+    pointer-events: none;
+    transform-origin: top center;
+    will-change: transform, opacity;
+}
+
+[data-theme="blood"] .message.user .message-markdown::before {
+    left: 22%;
+    box-shadow:
+        28px -8px 0 -0.5px rgba(115, 4, 16, 0.78),
+        64px 2px 0 rgba(220, 30, 45, 0.62),
+        100px -6px 0 -0.5px rgba(104, 3, 14, 0.7);
+    animation: bloodSeepFastA 2.6s cubic-bezier(0.42, 0, 0.2, 1) infinite;
+}
+
+[data-theme="blood"] .message.user .message-markdown::after {
+    right: 19%;
+    height: 34px;
+    box-shadow:
+        -24px -6px 0 -0.5px rgba(115, 4, 16, 0.78),
+        -56px 3px 0 rgba(220, 30, 45, 0.58),
+        -94px -7px 0 -0.5px rgba(104, 3, 14, 0.68);
+    animation: bloodSeepFastB 2.9s cubic-bezier(0.42, 0, 0.2, 1) infinite;
 }
 
 .message.bot .message-content {
@@ -741,6 +1249,42 @@ body {
     }
 }
 
+@keyframes bloodSeepFastA {
+    0%,
+    100% {
+        transform: scaleY(0.36) translateY(-1px);
+        opacity: 0.42;
+    }
+
+    42% {
+        transform: scaleY(1.05) translateY(0);
+        opacity: 0.88;
+    }
+
+    72% {
+        transform: scaleY(0.78) translateY(5px);
+        opacity: 0.62;
+    }
+}
+
+@keyframes bloodSeepFastB {
+    0%,
+    100% {
+        transform: scaleY(0.42) translateY(-1px);
+        opacity: 0.38;
+    }
+
+    38% {
+        transform: scaleY(1.02) translateY(0);
+        opacity: 0.84;
+    }
+
+    70% {
+        transform: scaleY(0.82) translateY(6px);
+        opacity: 0.58;
+    }
+}
+
 /* Input Area */
 .input-area {
     padding: 16px 24px 24px;
@@ -817,7 +1361,22 @@ body {
 
 .send-btn {
     background-color: var(--accent-color);
-    color: var(--bg-primary);
+    color: var(--accent-contrast);
+}
+
+.send-icon-blood {
+    display: none;
+}
+
+[data-theme="blood"] .send-icon-default {
+    display: none;
+}
+
+[data-theme="blood"] .send-icon-blood {
+    display: block;
+    font-size: 17px;
+    line-height: 1;
+    filter: drop-shadow(0 0 6px rgba(255, 93, 103, 0.4));
 }
 
 .send-btn:hover {
@@ -1095,8 +1654,157 @@ body {
     background-color: var(--danger-hover);
 }
 
+@keyframes cultivationGridDrift {
+    from {
+        background-position: 0 0, 0 0;
+    }
+
+    to {
+        background-position: 84px 84px, 84px 84px;
+    }
+}
+
+@keyframes bloodMistFlow {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 30px);
+    }
+
+    50% {
+        transform: translate3d(18vw, -4vh, 120px);
+    }
+}
+
+@keyframes talismanSway {
+    0%,
+    100% {
+        translate: 0 0;
+        rotate: 0deg;
+        opacity: 0.44;
+    }
+
+    50% {
+        translate: 0 -22px;
+        rotate: 3deg;
+        opacity: 0.66;
+    }
+}
+
+@keyframes skullHover {
+    0%,
+    100% {
+        translate: 0 0;
+        rotate: 0deg;
+        opacity: 0.24;
+    }
+
+    48% {
+        translate: 0 -20px;
+        rotate: -4deg;
+        opacity: 0.46;
+    }
+}
+
+@keyframes arcaneRingSpin {
+    to {
+        rotate: 0 0 1 360deg;
+    }
+}
+
+@keyframes talismanFloat {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 70px) rotateZ(0deg);
+        opacity: 0.16;
+    }
+
+    50% {
+        transform: translate3d(0, -32px, 170px) rotateZ(12deg);
+        opacity: 0.34;
+    }
+}
+
+@keyframes sanskritGlyphFloat {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 34px) rotateZ(-3deg) scale(1);
+        opacity: 0.22;
+    }
+
+    50% {
+        transform: translate3d(0, -28px, 130px) rotateZ(8deg) scale(1.12);
+        opacity: 0.46;
+    }
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
+    .cultivation-backdrop::before {
+        background-size: 58px 58px;
+    }
+
+    .ring-prime {
+        right: -24vw;
+        width: 260px;
+        height: 260px;
+    }
+
+    .ring-second {
+        display: none;
+    }
+
+    .curse-talisman {
+        width: 34px;
+        min-height: 96px;
+        font-size: 17px;
+    }
+
+    .talisman-center {
+        top: 54%;
+        width: 42px;
+        min-height: 126px;
+        font-size: 18px;
+        opacity: 0.34;
+    }
+
+    .talisman-a {
+        left: 5vw;
+        top: 30vh;
+    }
+
+    .talisman-b {
+        right: 4vw;
+        top: 38vh;
+    }
+
+    .talisman-c,
+    .skull-c {
+        display: none;
+    }
+
+    .demon-skull {
+        width: 42px;
+        height: 39px;
+    }
+
+    .skull-a {
+        right: 9vw;
+        top: 19vh;
+    }
+
+    .skull-b {
+        left: 12vw;
+        bottom: 22vh;
+    }
+
+    .talisman-field span {
+        font-size: 42px;
+    }
+
+    .talisman-field .sanskrit-glyph {
+        font-size: 38px;
+    }
+
     .sidebar {
         position: fixed;
         left: 0;
@@ -1144,6 +1852,14 @@ body {
     
     .welcome-screen h1 {
         font-size: 24px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cultivation-backdrop *,
+    .cultivation-backdrop::before {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
     }
 }
 
@@ -1227,6 +1943,14 @@ body {
     --terminal-green: #39ff14;
     --terminal-green-dim: #00c853;
     --terminal-green-soft: rgba(57, 255, 20, 0.38);
+}
+
+[data-theme="blood"] {
+    --xianxia-gold: #ffb35c;
+    --xianxia-jade: #ff5263;
+    --terminal-green: #ff3348;
+    --terminal-green-dim: #b90c1d;
+    --terminal-green-soft: rgba(255, 51, 72, 0.32);
 }
 
 @keyframes xianxia-char-seal {

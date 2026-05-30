@@ -24,6 +24,14 @@
             accent: 0xff9ac7,
             stars: 0xffedf5,
         },
+        {
+            particleCore: "rgba(255, 224, 218, 0.68)",
+            particleMid: "rgba(229, 18, 35, 0.34)",
+            particleEnd: "rgba(229, 18, 35, 0)",
+            ring: 0xff5d66,
+            accent: 0xe51223,
+            stars: 0xffe7e2,
+        },
     ];
 
     let width = 0;
@@ -178,8 +186,9 @@
         activeVideoIndex = nextIndex;
         activeTheme = nextIndex;
 
-        page.classList.toggle("video-theme-1", nextIndex === 0);
-        page.classList.toggle("video-theme-2", nextIndex === 1);
+        videos.forEach((_, index) => {
+            page.classList.toggle(`video-theme-${index + 1}`, nextIndex === index);
+        });
         page.dataset.activeVideo = String(nextIndex + 1);
         if (applyThreeTheme) applyThreeTheme(activeTheme);
 
