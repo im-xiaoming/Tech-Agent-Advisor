@@ -37,3 +37,4 @@ tmp/
 .ipynb_checkpoints/
 *.ipynb
 /data
+*.log

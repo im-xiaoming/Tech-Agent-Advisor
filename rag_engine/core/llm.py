@@ -1,9 +1,9 @@
 from rag_engine.core.config import settings
 from langchain_ollama import ChatOllama
 from functools import lru_cache
-import os
 from langchain_google_genai import ChatGoogleGenerativeAI
-
+from langchain_openai import ChatOpenAI
+import os
 
 
 @lru_cache(maxsize=8)
@@ -19,6 +19,18 @@ def _get_llm_model(temperature: float, reasoning: bool = False):
             timeout=None,
             max_retries=2,
             thinking_level='medium' if reasoning else 'low',
+        )
+        return model
+    elif settings.llm_provider == 'openai' and 'OPENAI_API_KEY' in os.environ:
+        print(f"Using OpenAI model: {settings.llm_model}")
+        model = ChatOpenAI(
+            model=settings.llm_model,
+            temperature=temperature,
+            stream_usage=True,
+            max_tokens=None,
+            timeout=None,
+            reasoning_effort="medium" if reasoning else "low",
+            max_retries=2
         )
         return model
     else:
@@ -152,29 +164,34 @@ def classify_and_rewrite(query: str, history: str = "") -> dict:
     """
     import json
 
-    system_prompt = f"""
-    HISTORY:
-    {history}
+    system_prompt = f"""You triage turns for a Vietnamese tech-shopping assistant and return ONE JSON object.
 
-    TASK:
-    1. Base on HISTORY and current QUERY, classify the user question into EXACTLY ONE of: smalltalk, product_advice, invalid. NOTE: some queries are additional information for previous query.
-       - smalltalk: greetings, thanks, farewells, or casual conversation.
-       - product_advice: asks about, compares, or requests advice on technology products such as phones, laptops, PCs, components, prices, specifications, cameras, batteries, or performance.
-       - invalid: empty or completely unrelated.
-    2. Rewrite the question as a SHORT, CLEAR, keyword-rich product-search query, at most 25 words, preserving the original meaning.
-       - If the intent is NOT product_advice, copy the original question verbatim.
-    3. Extract "filters": constraints the user states explicitly. ONLY fill fields the user clearly mentions; omit fields that are not clearly mentioned.
-       - brand (string): manufacturer or brand, e.g. "Apple", "Samsung", "Xiaomi", "Oppo", "Vivo", "Realme", "Asus".
-       - price_min, price_max (number, VND): "under 20 million VND" means price_max=20000000; "10-15 million VND" means price_min=10000000 and price_max=15000000; "above 30 million VND" means price_min=30000000.
-       - ram_min (number, GB): "RAM 8GB or more" means ram_min=8.
-       - storage_min (number, GB): "256GB" means storage_min=256.
-       - battery_min (number, mAh): "battery 5000 mAh or more" means battery_min=5000.
+CONVERSATION HISTORY (context for resolving references; do not answer it):
+{history}
 
-    OUTPUT REQUIREMENTS:
-    - Return ONLY ONE valid JSON object, with NO markdown, NO explanation, and NO extra line breaks.
-    - Schema: {{"intent": "smalltalk"|"product_advice"|"invalid", "rewritten": "...", "filters": {{...}}}}
-    - "filters" may be an empty object {{}} if there are no constraints.
-    """
+For the current QUERY, produce three fields.
+
+1. "intent" — exactly one of:
+   - "smalltalk": greetings, thanks, farewells, casual chit-chat.
+   - "product_advice": any request about tech products (phones, laptops, PCs, keyboards, mice, headphones, components, specs, prices, cameras, batteries, performance, comparisons). This INCLUDES short, terse, or colloquial follow-ups, corrections, and refinements (e.g. "nó giá bao nhiêu", "k chọn bàn phím mà", "loại rẻ hơn", "cái nào mạnh hơn").
+   - "invalid": empty input, or clearly unrelated to tech shopping (e.g. weather, jokes).
+   If torn between "invalid" and "product_advice", choose "product_advice".
+
+2. "rewritten" — a self-contained Vietnamese product-search query (<=25 words) that still makes sense WITHOUT the history:
+   - If intent is not product_advice, copy QUERY verbatim.
+   - Resolve every reference ("nó", "cái đó", "cái kia", "máy này", "this one"…) to the full product name from HISTORY.
+   - If QUERY names no product but recent HISTORY is about a product category, keep that category (e.g. after discussing keyboards, "làm văn phòng thì chọn cái nào" → "bàn phím cho văn phòng").
+   - For a correction of product type, keep the corrected type and drop the wrong one.
+   - For a comparison, name EVERY product on both sides in full, including ones from earlier turns. Never drop a side.
+
+3. "filters" — only constraints the user states explicitly; omit anything unstated:
+   - "brand" (str): a real manufacturer (Apple, Samsung, Xiaomi, Oppo…). Never use an operating system or generic word (android, ios, smartphone, điện thoại) as a brand.
+   - "price_min" / "price_max" (VND): "dưới 20 triệu" → price_max=20000000; "10-15 triệu" → price_min=10000000, price_max=15000000; "trên 30 triệu" → price_min=30000000.
+   - "ram_min" (GB), "storage_min" (GB), "battery_min" (mAh).
+
+Output ONLY the JSON object, no markdown and no commentary:
+{{"intent": "...", "rewritten": "...", "filters": {{...}}}}
+Use {{}} for filters when there are none."""
     fallback = {"intent": "product_advice", "rewritten": query, "filters": {}}
 
     try:
@@ -207,13 +224,23 @@ def classify_and_rewrite(query: str, history: str = "") -> dict:
 
 _NUMERIC_FILTER_KEYS = {"price_min", "price_max", "ram_min", "storage_min", "battery_min"}
 
+# Words the LLM sometimes mislabels as a "brand" but that match no product's
+# metadata.brand (they are operating systems, form factors, or generic terms).
+# Treating them as a brand filter wrongly zeroes out retrieval, so drop them and
+# let semantic search handle the intent instead.
+_NON_BRAND_WORDS = {
+    "android", "ios", "iphoneos", "ipados", "windows", "macos", "harmonyos",
+    "smartphone", "phone", "điện thoại", "laptop", "tablet", "máy tính",
+}
+
 
 def _sanitize_filters(raw: dict) -> dict:
     """Keep only known keys with valid values; coerce numerics; drop empties."""
     out: dict = {}
     brand = raw.get("brand")
     if isinstance(brand, str) and brand.strip():
-        out["brand"] = brand.strip()
+        if brand.strip().lower() not in _NON_BRAND_WORDS:
+            out["brand"] = brand.strip()
     for key in _NUMERIC_FILTER_KEYS:
         value = raw.get(key)
         if value is None or value == "":

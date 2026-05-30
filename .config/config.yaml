@@ -1,6 +1,6 @@
 chunking:
-  chunk_size: 512
-  chunk_overlap: 64
+  chunk_size: 1024
+  chunk_overlap: 124
 retriever:
   score_threshold: 0.0
   hybrid_enabled: true   # bật để dùng dense + BM25 sparse (cần rebuild index)
@@ -10,7 +10,7 @@ reranker:
   enabled: true
   model: Alibaba-NLP/gte-multilingual-reranker-base
   top_n: 5
-  candidate_multiplier: 4
+  candidate_multiplier: 5
   hallucination_threshold: 0.5
   min_rerank_score: 0.0
   regenerate_enabled: true     # tự sinh lại câu trả lời nếu groundedness/citation thấp
@@ -18,17 +18,17 @@ reranker:
   max_regenerations: 1         # tối đa số lần regenerate mỗi lượt
 chat_history:
   num_chats_retained: 5
-  max_length: 2048
-  beam_size: 15
+  max_length: 3072
+  beam_size: 20
 splitter:
   method: sentence_transformer # Options: recursive_character, tiktoken, sentence_transformer
 embedding:
-  embedding_provider: huggingface # ollama
-  embedding_model: BAAI/bge-m3 # qwen3-embedding
-  dimension: 1024 # bge-m3=1024, qwen3-embedding=4096 — must match the active embedding_model
+  embedding_provider: openai  # ollama, huggingface, openai
+  embedding_model: text-embedding-3-large # qwen3-embedding BAAI/bge-m3, text-embedding-3-large
+  dimension: 3072 # bge-m3=1024, qwen3-embedding=4096 — must match the active embedding_model
   device: auto # auto, cuda, or cpu
   batch_size: 2
-  max_seq_length: 512
+  max_seq_length: 512 # use for HuggingFaceEmbeddings
   ingest_batch_size: 8
 loader:
   type: jsonl

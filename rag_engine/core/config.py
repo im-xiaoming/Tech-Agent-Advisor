@@ -46,6 +46,7 @@ class Settings:
     llm_provider: str = os.getenv("LLM_PROVIDER", "ollama").lower()
     llm_model: str = os.getenv("LLM_MODEL", 'jaahas/qwen3.5-uncensored')
     gemini_api_key: str | None = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    openai_api_key: str | None = os.getenv('OPENAI_API_KEY')
     
     rag_top_k: int = int(os.getenv("RAG_TOP_K", "5"))
     rag_temperature: float = float(os.getenv("RAG_TEMPERATURE", "0.1"))

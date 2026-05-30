@@ -2,6 +2,7 @@ from functools import lru_cache
 from rag_engine.core.config import settings
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_ollama import OllamaEmbeddings
+from langchain_openai import OpenAIEmbeddings
 import torch
 
 
@@ -19,6 +20,16 @@ def get_embeddings():
         return OllamaEmbeddings(
             model=settings.embedding_model,
             dimensions=settings.embedding_dimension,
+        )
+    elif settings.embedding_provider == 'openai':
+        
+        print("Use OpenAI Embedding...")
+        return OpenAIEmbeddings(
+            model=settings.embedding_model,
+            # With the `text-embedding-3` class
+            # of models, you can specify the size
+            # of the embeddings you want returned.
+            dimensions=settings.embedding_dimension
         )
     else:
         print("Use HuggingFaceEmbeddings...")

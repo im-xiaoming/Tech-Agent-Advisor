@@ -8,28 +8,38 @@ import time
 logger = logging.getLogger(__name__)
 
 
-_PROMPT_LEAK_MARKERS = (
-    "SYSTEM PROMPT",
-    "OUTPUT REQUIREMENTS",
-    "CONTEXT",
-    "QUESTION:",
-    "Trả lời:",
-    "Yêu cầu:",
-    "Hướng dẫn",
+# Distinctive prompt scaffolding that essentially never shows up in a genuine
+# product answer. Any single one of these is strong evidence of a leak.
+_STRONG_LEAK_MARKERS = (
+    "system prompt",
+    "output requirements",
+    "=== context",
+    "hết context",
+    "hướng dẫn cho lượt trả lời",
+    "{context}",
+    "{history}",
+    "{query}",
+    "{extra_instructions}",
+)
+# Weaker markers: common enough in normal prose that one alone is not proof;
+# require at least two distinct hits before treating it as a leak.
+_WEAK_LEAK_MARKERS = (
+    "question:",
+    "trả lời:",
+    "yêu cầu:",
 )
 _PROMPT_LEAK_FALLBACK = (
     "Mình chưa có đủ dữ liệu trong kho để trả lời chính xác. "
-    "Bạn có thể cho mình thêm nhu cầu như ngân sách, hãng ưu tiên hoặc kiểu tai nghe không?"
+    "Bạn có thể cho mình thêm nhu cầu như loại sản phẩm, ngân sách hoặc hãng ưu tiên không?"
 )
 
 
 def _looks_like_prompt_leak(text: str) -> bool:
     normalized = text.lower()
-    if normalized.count("yêu cầu:") >= 2:
+    if any(marker in normalized for marker in _STRONG_LEAK_MARKERS):
         return True
-    if normalized.count("context") >= 2:
-        return True
-    return any(marker.lower() in normalized for marker in _PROMPT_LEAK_MARKERS)
+    weak_hits = sum(1 for marker in _WEAK_LEAK_MARKERS if marker in normalized)
+    return weak_hits >= 2
 
 
 def _sse(event: dict) -> str:

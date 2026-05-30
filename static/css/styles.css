@@ -114,6 +114,22 @@ body {
         var(--bg-primary);
 }
 
+[data-theme="blood"] .sidebar,
+[data-theme="blood"] .main-content,
+[data-theme="blood"] .mobile-header,
+[data-theme="blood"] .input-area,
+[data-theme="blood"] .input-wrapper textarea,
+[data-theme="blood"] .modal {
+    font-family: "TP Han Zi", 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+/* Message text and input stay in a normal readable font */
+[data-theme="blood"] .message-markdown,
+[data-theme="blood"] .message-text,
+[data-theme="blood"] .input-wrapper textarea {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 /* App Container */
 .app-container {
     display: flex;
