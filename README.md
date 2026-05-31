@@ -1,3 +1,5 @@
+![Hongkongdoll](tech_chatbot_rag_multiagent_app\images\image.png)
+
 # Vạn Tượng Thiên Cơ
 
 Tech Chatbot RAG Multi-Agent App là một pháp đàn vấn đáp công nghệ, lấy Django làm thân, Qdrant làm linh mạch tri thức, LangGraph làm trận đồ điều phối, LLM làm nguyên thần sinh đáp. Người dùng nhập vấn, hệ thống phân ý, triệu hồi tư liệu, tái xếp hạng, kiểm chứng căn cứ, rồi xuất đáp theo dòng SSE.
