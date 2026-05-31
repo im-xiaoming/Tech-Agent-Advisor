@@ -97,7 +97,7 @@ def _persist_log(
             except Exception:
                 logger.exception("Groundedness scoring failed.")
 
-        ChatLog.objects.create(
+        chat_log = ChatLog.objects.create(
             user=user if getattr(user, "is_authenticated", False) else None,
             session_id=session_id or "",
             query=query,
@@ -112,6 +112,14 @@ def _persist_log(
             groundedness_score=groundedness,
             hallucination_flag=flag,
         )
+
+        # Kick off RAGAS evaluation on its own daemon thread (never blocks chat).
+        try:
+            from evaluation.services import evaluate_chatlog_async
+
+            evaluate_chatlog_async(chat_log)
+        except Exception:
+            logger.exception("Failed to trigger RAG evaluation.")
     except Exception:
         logger.exception("Failed to persist ChatLog.")
 

@@ -51,8 +51,16 @@ INSTALLED_APPS = [
     'chat',
     'accounts',
     'landing',
-    "manager"
+    "manager",
+    "evaluation",
 ]
+
+# RAGAS background evaluation of chat answers (runs off-thread; never blocks chat).
+RAG_EVALUATION_ENABLED = True
+RAG_EVALUATION_SAMPLE_RATE = 1.0  # 0.0–1.0; lower to evaluate only a fraction of chats
+RAG_EVALUATION_LLM_MODEL = "gpt-4.1-mini"  # judge model; MUST be non-reasoning (reasoning models return empty structured output)
+RAG_EVALUATION_EMBEDDING_MODEL = "text-embedding-3-small"
+RAG_EVALUATION_MAX_TOKENS = 8192  # judge output cap; faithfulness JSON can be long for rich answers
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
