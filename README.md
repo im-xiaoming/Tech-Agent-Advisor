@@ -1,4 +1,4 @@
-![Hongkongdoll](tech_chatbot_rag_multiagent_app\images\image.png)
+![Hongkongdoll](/tech_chatbot_rag_multiagent_app/images/image.png)
 
 # Vạn Tượng Thiên Cơ
 
