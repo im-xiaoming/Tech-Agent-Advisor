@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from manager.models import ChatLog
+from manager.models import ChatLog, SemanticCacheEntry
 
 
 @admin.register(ChatLog)
@@ -40,3 +40,42 @@ class ChatLogAdmin(admin.ModelAdmin):
     @admin.display(description="Query")
     def short_query(self, obj):
         return (obj.query or "")[:80]
+
+
+@admin.register(SemanticCacheEntry)
+class SemanticCacheEntryAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "created_at",
+        "last_hit_at",
+        "short_question",
+        "model_name",
+        "hit_count",
+        "similarity",
+        "expires_at",
+    )
+    list_filter = ("model_name", "created_at", "expires_at")
+    search_fields = ("question", "answer", "vector_point_id")
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "last_hit_at",
+        "expires_at",
+        "question",
+        "answer",
+        "sources",
+        "filters",
+        "model_name",
+        "vector_point_id",
+        "similarity",
+        "hit_count",
+    )
+    fieldsets = (
+        ("Meta", {"fields": ("created_at", "updated_at", "last_hit_at", "expires_at", "model_name")}),
+        ("Cache", {"fields": ("question", "answer", "sources", "filters")}),
+        ("Vector", {"fields": ("vector_point_id", "similarity", "hit_count")}),
+    )
+
+    @admin.display(description="Question")
+    def short_question(self, obj):
+        return (obj.question or "")[:80]

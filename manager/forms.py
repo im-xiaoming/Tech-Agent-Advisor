@@ -27,6 +27,19 @@ CONFIG_FIELDS = {
     "beam_size":                     ("chat_history", "beam_size"),
     # splitter
     "splitter_method":               ("splitter",  "method"),
+    # vector store
+    "vector_backend":                ("vector",    "backend"),
+    "vector_collection":             ("vector",    "collection"),
+    # llm
+    "llm_provider":                  ("llm",       "provider"),
+    "llm_model":                     ("llm",       "model"),
+    "llm_supervisor_model":          ("llm",       "supervisor_model"),
+    # semantic cache
+    "semantic_cache_enabled":        ("semantic_cache", "enabled"),
+    "semantic_cache_collection":     ("semantic_cache", "collection"),
+    "semantic_cache_threshold":      ("semantic_cache", "threshold"),
+    "semantic_cache_ttl_hours":      ("semantic_cache", "ttl_hours"),
+    "semantic_cache_limit":          ("semantic_cache", "limit"),
     # embedding
     "embedding_provider":            ("embedding", "embedding_provider"),
     "embedding_model":               ("embedding", "embedding_model"),
@@ -44,6 +57,7 @@ _BOOL_FIELDS = {
     "self_query_enabled",
     "reranker_enabled",
     "reranker_regenerate_enabled",
+    "semantic_cache_enabled",
 }
 
 
@@ -76,6 +90,22 @@ class ConfigForm(forms.Form):
 
     # --- Splitter ---
     splitter_method = forms.CharField(label="Splitter method")
+
+    # --- Vector store ---
+    vector_backend = forms.CharField(required=False, label="Vector backend")
+    vector_collection = forms.CharField(label="Qdrant collection")
+
+    # --- LLM ---
+    llm_provider = forms.CharField(label="LLM provider")
+    llm_model = forms.CharField(label="LLM model")
+    llm_supervisor_model = forms.CharField(required=False, label="Supervisor LLM model")
+
+    # --- Semantic cache ---
+    semantic_cache_enabled = forms.BooleanField(required=False, label="Semantic cache enabled")
+    semantic_cache_collection = forms.CharField(label="Cache collection")
+    semantic_cache_threshold = forms.FloatField(min_value=0, max_value=1, label="Similarity threshold")
+    semantic_cache_ttl_hours = forms.IntegerField(min_value=0, label="TTL (hours)")
+    semantic_cache_limit = forms.IntegerField(min_value=1, label="Cache limit")
 
     # --- Embedding ---
     embedding_provider = forms.CharField(label="Embedding provider")

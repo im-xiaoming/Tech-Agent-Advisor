@@ -52,3 +52,31 @@ class ChatLog(models.Model):
 
     def __str__(self):
         return f"#{self.pk} {self.query[:60]}"
+
+
+class SemanticCacheEntry(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_hit_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    question = models.TextField()
+    answer = models.TextField()
+    sources = models.JSONField(default=list, blank=True)
+    filters = models.JSONField(default=dict, blank=True)
+    model_name = models.CharField(max_length=120, blank=True, default="")
+
+    vector_point_id = models.CharField(max_length=80, blank=True, default="")
+    similarity = models.FloatField(null=True, blank=True)
+    hit_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["-created_at"], name="manager_sem_created_1ef41d_idx"),
+            models.Index(fields=["expires_at"], name="manager_sem_expires_6fbb51_idx"),
+            models.Index(fields=["model_name"], name="manager_sem_model_n_27a822_idx"),
+        ]
+
+    def __str__(self):
+        return f"#{self.pk} {self.question[:60]}"

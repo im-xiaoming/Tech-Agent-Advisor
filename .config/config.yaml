@@ -10,7 +10,7 @@ reranker:
   enabled: true
   model: Alibaba-NLP/gte-multilingual-reranker-base
   top_n: 5
-  candidate_multiplier: 5
+  candidate_multiplier: 3
   hallucination_threshold: 0.5
   min_rerank_score: 0.0
   regenerate_enabled: true     # tự sinh lại câu trả lời nếu groundedness/citation thấp
@@ -32,3 +32,16 @@ embedding:
   ingest_batch_size: 8
 loader:
   type: jsonl
+vector:
+  backend: qdrant   # hiện chưa dùng trong code, giữ để cấu hình backend vector store
+  collection: tech_products
+llm:
+  provider: openai            # ollama, gemini, openai
+  model: gpt-5-mini
+  supervisor_model: gpt-5-mini
+semantic_cache:
+  enabled: true
+  collection: tech_answer_cache
+  threshold: 0.92
+  ttl_hours: 24
+  limit: 5

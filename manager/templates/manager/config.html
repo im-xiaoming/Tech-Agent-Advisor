@@ -217,6 +217,92 @@
                 </div>
             </section>
 
+            <!-- LLM -->
+            <section class="config-section">
+                <h2>LLM</h2>
+                <div class="field-grid">
+                    <label>
+                        <span class="field-name">{{ form.llm_provider.label }}</span>
+                        <span class="field-hint">Backend chạy LLM: openai, gemini, hoặc ollama.</span>
+                        {{ form.llm_provider }}
+                        {{ form.llm_provider.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.llm_model.label }}</span>
+                        <span class="field-hint">Tên model dùng để sinh câu trả lời chính.</span>
+                        {{ form.llm_model }}
+                        {{ form.llm_model.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.llm_supervisor_model.label }}</span>
+                        <span class="field-hint">Model cho supervisor agent (bỏ trống = dùng LLM model).</span>
+                        {{ form.llm_supervisor_model }}
+                        {{ form.llm_supervisor_model.errors }}
+                    </label>
+                </div>
+            </section>
+
+            <!-- Vector store -->
+            <section class="config-section">
+                <h2>Vector store</h2>
+                <p class="section-hint">URL và API key của Qdrant được giữ trong <code>.env</code> (thông tin kết nối/bí mật).</p>
+                <div class="field-grid">
+                    <label>
+                        <span class="field-name">{{ form.vector_backend.label }}</span>
+                        <span class="field-hint">Backend vector store (hiện hỗ trợ qdrant).</span>
+                        {{ form.vector_backend }}
+                        {{ form.vector_backend.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.vector_collection.label }}</span>
+                        <span class="field-hint">Tên collection chứa vector sản phẩm.</span>
+                        {{ form.vector_collection }}
+                        {{ form.vector_collection.errors }}
+                    </label>
+                </div>
+            </section>
+
+            <!-- Semantic cache -->
+            <section class="config-section">
+                <h2>Semantic cache</h2>
+                <div class="checkbox-row" style="margin-bottom:.8rem;">
+                    <div class="checkbox-item">
+                        <label class="cb-label">
+                            {{ form.semantic_cache_enabled }}
+                            <span>{{ form.semantic_cache_enabled.label }}</span>
+                        </label>
+                        <span class="field-hint">Cache câu trả lời theo độ tương đồng ngữ nghĩa để tiết kiệm gọi LLM.</span>
+                        {{ form.semantic_cache_enabled.errors }}
+                    </div>
+                </div>
+                <div class="field-grid">
+                    <label>
+                        <span class="field-name">{{ form.semantic_cache_collection.label }}</span>
+                        <span class="field-hint">Collection lưu các cặp câu hỏi – câu trả lời đã cache.</span>
+                        {{ form.semantic_cache_collection }}
+                        {{ form.semantic_cache_collection.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.semantic_cache_threshold.label }}</span>
+                        <span class="field-hint">Ngưỡng tương đồng để coi là cache hit (0–1).</span>
+                        {{ form.semantic_cache_threshold }}
+                        {{ form.semantic_cache_threshold.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.semantic_cache_ttl_hours.label }}</span>
+                        <span class="field-hint">Thời gian sống của một mục cache (giờ).</span>
+                        {{ form.semantic_cache_ttl_hours }}
+                        {{ form.semantic_cache_ttl_hours.errors }}
+                    </label>
+                    <label>
+                        <span class="field-name">{{ form.semantic_cache_limit.label }}</span>
+                        <span class="field-hint">Số ứng viên cache tối đa lấy ra mỗi lần tra cứu.</span>
+                        {{ form.semantic_cache_limit }}
+                        {{ form.semantic_cache_limit.errors }}
+                    </label>
+                </div>
+            </section>
+
             <!-- Embedding -->
             <section class="config-section">
                 <h2>Embedding</h2>

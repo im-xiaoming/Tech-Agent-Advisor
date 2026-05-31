@@ -43,18 +43,46 @@ class Settings:
     splitter_method: str = config["splitter"]["method"]
 
     # LLM MODEL
-    llm_provider: str = os.getenv("LLM_PROVIDER", "ollama").lower()
-    llm_model: str = os.getenv("LLM_MODEL", 'jaahas/qwen3.5-uncensored')
+    llm_provider: str = os.getenv("LLM_PROVIDER", config["llm"]["provider"]).lower()
+    llm_model: str = os.getenv("LLM_MODEL", config["llm"]["model"])
+    supervisor_llm_model: str = os.getenv(
+        "SUPERVISOR_LLM_MODEL",
+        os.getenv("LLM_MODEL", config["llm"].get("supervisor_model", config["llm"]["model"])),
+    )
     gemini_api_key: str | None = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     openai_api_key: str | None = os.getenv('OPENAI_API_KEY')
     
     rag_top_k: int = int(os.getenv("RAG_TOP_K", "5"))
     rag_temperature: float = float(os.getenv("RAG_TEMPERATURE", "0.1"))
 
+    # Semantic answer cache
+    semantic_cache_enabled: bool = os.getenv(
+        "SEMANTIC_CACHE_ENABLED", str(config["semantic_cache"]["enabled"])
+    ).lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    semantic_cache_collection: str = os.getenv(
+        "SEMANTIC_CACHE_COLLECTION", config["semantic_cache"]["collection"]
+    )
+    semantic_cache_threshold: float = float(
+        os.getenv("SEMANTIC_CACHE_THRESHOLD", config["semantic_cache"]["threshold"])
+    )
+    semantic_cache_ttl_hours: int = int(
+        os.getenv("SEMANTIC_CACHE_TTL_HOURS", config["semantic_cache"]["ttl_hours"])
+    )
+    semantic_cache_limit: int = int(
+        os.getenv("SEMANTIC_CACHE_LIMIT", config["semantic_cache"].get("limit", 5))
+    )
+
     # Vector database (Qdrant) settings
-    qdrant_url: str | None = os.getenv("QDRANT_URL")
-    qdrant_api_key: str | None = os.getenv("QDRANT_API_KEY")
-    qdrant_collection: str = os.getenv("QDRANT_COLLECTION", "tech_products")
+    vector_backend: str = config.get("vector", {}).get("backend", "qdrant")
+    qdrant_url: str | None = os.getenv("QDRANT_URL")  # connection info -> giữ ở .env
+    qdrant_api_key: str | None = os.getenv("QDRANT_API_KEY")  # secret -> giữ ở .env
+    qdrant_collection: str = os.getenv(
+        "QDRANT_COLLECTION", config["vector"]["collection"]
+    )
     qdrant_timeout: int = int(os.getenv("QDRANT_TIMEOUT", "60"))
     qdrant_prefer_grpc: bool = os.getenv("QDRANT_PREFER_GRPC", "true").lower() in {
         "1",

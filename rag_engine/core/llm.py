@@ -1,3 +1,4 @@
+from rag_engine.core.config import settings
 from rag_engine.core.llm_utils import (
     _extract_json_blob,
     _invoke_llm,
@@ -12,6 +13,7 @@ def generate_response_stream(
     user_prompt: str,
     temperature: float,
     reasoning: bool = False,
+    model_name: str | None = None,
 ):
     """Yield content chunks from the active LLM."""
     yield from _stream_llm(
@@ -19,6 +21,7 @@ def generate_response_stream(
         user_prompt,
         temperature,
         reasoning=reasoning,
+        model_name=model_name,
     )
 
 
@@ -27,6 +30,7 @@ def generate_response(
     user_prompt: str,
     temperature: float,
     reasoning: bool = False,
+    model_name: str | None = None,
 ) -> str:
     """
     Call the active LLM and return the generated text.
@@ -39,7 +43,13 @@ def generate_response(
     Returns:
         The generated response text from the LLM.
     """
-    return _invoke_llm(system_prompt, user_prompt, temperature, reasoning=reasoning)
+    return _invoke_llm(
+        system_prompt,
+        user_prompt,
+        temperature,
+        reasoning=reasoning,
+        model_name=model_name,
+    )
 
 
 def classify_and_rewrite(query: str, history: str = "") -> dict:
@@ -96,7 +106,12 @@ Use {{}} for filters when there are none."""
     fallback = {"intent": "product_advice", "rewritten": query, "filters": {}}
 
     try:
-        raw = generate_response(system_prompt, query, temperature=0.0)
+        raw = generate_response(
+            system_prompt,
+            query,
+            temperature=0.0,
+            model_name=settings.supervisor_llm_model,
+        )
     except Exception:
         return fallback
 
@@ -141,7 +156,12 @@ def rewrite_query_for_retrieval(query: str, history: str = "") -> str:
     - Use at most 25 words.
     """
     try:
-        raw = generate_response(system_prompt, query, temperature=0.1)
+        raw = generate_response(
+            system_prompt,
+            query,
+            temperature=0.1,
+            model_name=settings.supervisor_llm_model,
+        )
     except Exception:
         return query
 
@@ -171,7 +191,12 @@ def classify_intent(query: str, history: str = "") -> str:
     - Do not explain, do not add punctuation, and do not add a line break.
     """
     try:
-        raw = generate_response(system_prompt, query, temperature=0.0)
+        raw = generate_response(
+            system_prompt,
+            query,
+            temperature=0.0,
+            model_name=settings.supervisor_llm_model,
+        )
     except Exception:
         return "product_advice"
 

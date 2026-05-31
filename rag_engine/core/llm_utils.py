@@ -10,7 +10,7 @@ from rag_engine.core.config import settings
 
 
 _Message = tuple[str, str]
-_ModelFactory = Callable[[float, bool], Any]
+_ModelFactory = Callable[[str, float, bool], Any]
 
 _NUMERIC_FILTER_KEYS = {"price_min", "price_max", "ram_min", "storage_min", "battery_min"}
 
@@ -40,21 +40,23 @@ def _build_messages(system_prompt: str, user_prompt: str) -> list[_Message]:
     return [("system", system_prompt), ("user", user_prompt)]
 
 
-def _response_content(response) -> str:
+def _response_content(response, *, strip: bool = True) -> str:
     """Extract plain text content from a LangChain chat response."""
     content = getattr(response, "content", "")
     if isinstance(content, list):
-        return "".join(
+        text = "".join(
             str(item.get("text", item)) if isinstance(item, dict) else str(item)
             for item in content
-        ).strip()
-    return str(content).strip()
+        )
+    else:
+        text = str(content)
+    return text.strip() if strip else text
 
 
-def _build_gemini_model(temperature: float, reasoning: bool):
+def _build_gemini_model(model_name: str, temperature: float, reasoning: bool):
     """Create a Gemini chat model instance."""
     return ChatGoogleGenerativeAI(
-        model=settings.llm_model,
+        model=model_name,
         temperature=temperature,
         max_tokens=None,
         timeout=None,
@@ -63,10 +65,10 @@ def _build_gemini_model(temperature: float, reasoning: bool):
     )
 
 
-def _build_openai_model(temperature: float, reasoning: bool):
+def _build_openai_model(model_name: str, temperature: float, reasoning: bool):
     """Create an OpenAI chat model instance."""
     return ChatOpenAI(
-        model=settings.llm_model,
+        model=model_name,
         temperature=temperature,
         stream_usage=True,
         max_tokens=None,
@@ -76,10 +78,10 @@ def _build_openai_model(temperature: float, reasoning: bool):
     )
 
 
-def _build_ollama_model(temperature: float, reasoning: bool):
+def _build_ollama_model(model_name: str, temperature: float, reasoning: bool):
     """Create an Ollama chat model instance."""
     return ChatOllama(
-        model=settings.llm_model,
+        model=model_name,
         temperature=temperature,
         reasoning=reasoning,
     )
@@ -126,12 +128,17 @@ def _validate_provider_credentials(provider: str) -> None:
 
 
 @lru_cache(maxsize=8)
-def _get_llm_model(temperature: float, reasoning: bool = False):
+def _get_llm_model(
+    temperature: float,
+    reasoning: bool = False,
+    model_name: str | None = None,
+):
     """Get the active LLM model based on configuration."""
     provider = _active_provider()
+    active_model = model_name or settings.llm_model
     _validate_provider_credentials(provider)
-    print(f"Using {_PROVIDER_LABELS[provider]} model: {settings.llm_model}")
-    return _MODEL_FACTORIES[provider](temperature, reasoning)
+    print(f"Using {_PROVIDER_LABELS[provider]} model: {active_model}")
+    return _MODEL_FACTORIES[provider](active_model, temperature, reasoning)
 
 
 def _invoke_llm(
@@ -139,9 +146,10 @@ def _invoke_llm(
     user_prompt: str,
     temperature: float,
     reasoning: bool = False,
+    model_name: str | None = None,
 ) -> str:
     """Invoke the active chat model and return stripped response content."""
-    llm = _get_llm_model(temperature, reasoning=reasoning)
+    llm = _get_llm_model(temperature, reasoning=reasoning, model_name=model_name)
     response = llm.invoke(_build_messages(system_prompt, user_prompt))
     return _response_content(response)
 
@@ -151,11 +159,12 @@ def _stream_llm(
     user_prompt: str,
     temperature: float,
     reasoning: bool = False,
+    model_name: str | None = None,
 ):
-    """Yield stripped content chunks from the active chat model."""
-    llm = _get_llm_model(temperature, reasoning=reasoning)
+    """Yield content chunks from the active chat model without trimming whitespace."""
+    llm = _get_llm_model(temperature, reasoning=reasoning, model_name=model_name)
     for chunk in llm.stream(_build_messages(system_prompt, user_prompt)):
-        content = _response_content(chunk)
+        content = _response_content(chunk, strip=False)
         if content:
             yield content
 
