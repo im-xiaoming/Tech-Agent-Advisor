@@ -318,11 +318,13 @@ def _stream_product_advice(state: dict, total_started: float, route: str, db, ge
         yield from _stream_cached_response(state, cached, total_started, route)
         return
 
+    yield {"status": "searching_documents"}
     state, docs = _run_retrieval(state, db, get_default_retrieval_agent)
     if not docs:
         yield from _stream_no_context_response(state, total_started, route)
         return
 
+    yield {"status": "generating"}
     yield {"sources": state.get("sources", [])}
     full = yield from _stream_answer_tokens(
         stream_advisor_tokens(state),
@@ -371,6 +373,7 @@ def stream_chat_events(
     """Yield the full streaming event sequence for one chat turn."""
     total_started = time.perf_counter()
     state = _build_initial_state(query, history, temperature, top_k)
+    yield {"status": "thinking"}
     state, route = _route_with_supervisor(state, query)
 
     if route in ("invalid",) or (route == "smalltalk" and not state.get("query")):

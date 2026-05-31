@@ -1326,6 +1326,28 @@ body {
 }
 
 /* Typing Indicator */
+.typing-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.typing-status {
+    font-size: 0.9em;
+    color: var(--text-tertiary);
+    font-style: italic;
+    animation: typingStatusPulse 1.6s ease-in-out infinite;
+}
+
+.typing-status:empty {
+    display: none;
+}
+
+@keyframes typingStatusPulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+
 .typing-indicator {
     display: flex;
     gap: 4px;

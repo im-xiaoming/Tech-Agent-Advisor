@@ -130,7 +130,10 @@ def stream_chat(query: str, history: str = "", user=None, session_id: str = ""):
         from rag_engine.rag.pipeline import ask_stream
 
         for event in ask_stream(query, history=history):
-            if "sources" in event and "token" not in event and "final" not in event:
+            if "status" in event:
+                # Progress hint for the UI (e.g. "searching_documents"). Stateless.
+                yield _sse({"status": event["status"]})
+            elif "sources" in event and "token" not in event and "final" not in event:
                 streamed_sources = event["sources"] or []
                 yield _sse({"sources": streamed_sources})
             elif "regenerating" in event:

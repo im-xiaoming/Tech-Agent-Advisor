@@ -133,6 +133,9 @@ const UI_TEXT = {
         exportPrefix: 'tech-chatbot-export',
         emptyResponse: 'Empty response.',
         lowConfidenceWarning: '> ⚠️ **Note:** this answer has low confidence compared with the knowledge base. Please verify it with staff or the product page.',
+        statusThinking: 'Analyzing your question…',
+        statusSearching: 'Searching documents…',
+        statusGenerating: 'Writing the answer…',
     },
     blood: {
         pageTitle: 'Thiên Vấn - Công Nghệ Vấn Đạo',
@@ -215,7 +218,17 @@ const UI_TEXT = {
         exportPrefix: 'thien-van-van-luc',
         emptyResponse: 'Không có hồi đáp.',
         lowConfidenceWarning: '> ⚠️ **Lưu ý:** câu trả lời này có độ tin cậy thấp so với dữ liệu trong kho. Vui lòng đối chiếu thêm với nhân viên hoặc trang sản phẩm.',
+        statusThinking: 'Đang vận thần phân giải nghi vấn…',
+        statusSearching: 'Đang tra cứu điển tịch…',
+        statusGenerating: 'Đang phóng bút hồi đáp…',
     },
+};
+
+// Map backend status keys -> UI_TEXT keys
+const STATUS_TEXT_KEYS = {
+    thinking: 'statusThinking',
+    searching_documents: 'statusSearching',
+    generating: 'statusGenerating',
 };
 
 function textFor(key) {
@@ -953,15 +966,31 @@ function showTypingIndicator() {
     indicator.innerHTML = `
         <div class="message-avatar">${escapeHtml(textFor('avatarBot'))}</div>
         <div class="message-content">
-            <div class="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
+            <div class="typing-row">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <span class="typing-status"></span>
             </div>
         </div>
     `;
     messagesArea.appendChild(indicator);
     chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Update the textual status next to the typing dots (e.g. "Searching documents…")
+function setTypingStatus(statusKey) {
+    const indicator = document.getElementById('typingIndicator');
+    if (!indicator) return;
+    const label = indicator.querySelector('.typing-status');
+    if (!label) return;
+    const textKey = STATUS_TEXT_KEYS[statusKey];
+    label.textContent = textKey ? textFor(textKey) : '';
+    const wasAtBottom =
+        chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < 80;
+    if (wasAtBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 // Hide typing indicator
@@ -1330,6 +1359,11 @@ async function getBotResponse(userMessage) {
                 try {
                     event = JSON.parse(payload);
                 } catch (_) {
+                    continue;
+                }
+                if (event.status) {
+                    // Progress hint shown in the typing indicator until tokens arrive.
+                    setTypingStatus(event.status);
                     continue;
                 }
                 if (event.regenerating) {
