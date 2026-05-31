@@ -1,98 +1,10 @@
-from rag_engine.core.config import settings
-from langchain_ollama import ChatOllama
-from functools import lru_cache
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
-import os
-
-
-@lru_cache(maxsize=8)
-def _get_llm_model(temperature: float, reasoning: bool = False):
-    """Get the active LLM model based on configuration."""
-    
-    if settings.llm_provider == "gemini" and "GOOGLE_API_KEY" in os.environ:
-        print(f"Using Gemini model: {settings.llm_model}")
-        model = ChatGoogleGenerativeAI(
-            model=settings.llm_model,
-            temperature=temperature,
-            max_tokens=None,
-            timeout=None,
-            max_retries=2,
-            thinking_level='medium' if reasoning else 'low',
-        )
-        return model
-    elif settings.llm_provider == 'openai' and 'OPENAI_API_KEY' in os.environ:
-        print(f"Using OpenAI model: {settings.llm_model}")
-        model = ChatOpenAI(
-            model=settings.llm_model,
-            temperature=temperature,
-            stream_usage=True,
-            max_tokens=None,
-            timeout=None,
-            reasoning_effort="medium" if reasoning else "low",
-            max_retries=2
-        )
-        return model
-    else:
-        print(f"Using Ollama model: {settings.llm_model}")
-        model = ChatOllama(
-            model=settings.llm_model,
-            temperature=temperature,
-            reasoning=reasoning
-        )
-        return model
-
-
-
-def _generate_ollama(system_prompt: str, user_prompt: str, temperature: float, reasoning: bool = False) -> str:
-    """
-    Call local Ollama server and return the generated text.
-    
-    Args:
-        system_prompt (str): The system prompt to send to the LLM.
-        user_prompt (str): The user prompt to send to the LLM.
-        temperature (float): The sampling temperature for generation.
-        reasoning (Optional[bool]): Activate model's reasoning mode.
-    
-    Returns:
-        The generated response text from the LLM.
-    """
-    llm = _get_llm_model(temperature, reasoning=reasoning)
-    
-    messages = [
-        ('system', system_prompt),
-        ('user', user_prompt)
-    ]
-    response = llm.invoke(messages)
-    return response.content.strip()
-
-
-
-def _generate_gemini(system_prompt: str, user_prompt: str, temperature: float) -> str:
-    """
-    Call the configured Gemini model and return generated text.
-    
-    Args:
-        system_prompt: The system prompt to send to the LLM.
-        user_prompt: The user prompt to send to the LLM.
-        temperature: The sampling temperature for generation.
-        
-    Returns:
-        The generated response text from the LLM.
-    """
-    if not settings.gemini_api_key:
-        raise ValueError(
-            "GEMINI_API_KEY or GOOGLE_API_KEY is required when LLM_PROVIDER=gemini."
-        )
-
-    llm = _get_llm_model(temperature, reasoning=False)
-    messages = [
-        ("system", system_prompt),
-        ("user", user_prompt)
-    ]
-    response = llm.invoke(messages)
-    return response.content.strip()
-
+from rag_engine.core.llm_utils import (
+    _extract_json_blob,
+    _invoke_llm,
+    _sanitize_filters,
+    _stream_llm,
+    _strip_reasoning,
+)
 
 
 def generate_response_stream(
@@ -101,16 +13,21 @@ def generate_response_stream(
     temperature: float,
     reasoning: bool = False,
 ):
-    """Yield content chunks from the active LLM. Works for both Ollama and Gemini."""
-    llm = _get_llm_model(temperature, reasoning=reasoning)
-    messages = [("system", system_prompt), ("user", user_prompt)]
-    for chunk in llm.stream(messages):
-        content = getattr(chunk, "content", "")
-        if content:
-            yield content
+    """Yield content chunks from the active LLM."""
+    yield from _stream_llm(
+        system_prompt,
+        user_prompt,
+        temperature,
+        reasoning=reasoning,
+    )
 
 
-def generate_response(system_prompt: str, user_prompt: str, temperature: float, reasoning: bool = False) -> str:
+def generate_response(
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float,
+    reasoning: bool = False,
+) -> str:
     """
     Call the active LLM and return the generated text.
 
@@ -118,27 +35,11 @@ def generate_response(system_prompt: str, user_prompt: str, temperature: float, 
         system_prompt: The system prompt to send to the LLM.
         user_prompt: The user prompt to send to the LLM.
         temperature: The sampling temperature for generation.
-    
+
     Returns:
         The generated response text from the LLM.
     """
-    if settings.llm_provider == 'gemini':
-        return _generate_gemini(system_prompt, user_prompt, temperature, reasoning)
-    else:
-        return _generate_ollama(system_prompt, user_prompt, temperature, reasoning)
-
-
-def _strip_reasoning(text: str) -> str:
-    """Remove <think>...</think> blocks some reasoning models emit."""
-    import re
-    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-
-
-def _extract_json_blob(text: str) -> str:
-    """Pull the first {...} JSON object out of a possibly noisy LLM response."""
-    import re
-    match = re.search(r"\{.*\}", text, flags=re.DOTALL)
-    return match.group(0) if match else ""
+    return _invoke_llm(system_prompt, user_prompt, temperature, reasoning=reasoning)
 
 
 def classify_and_rewrite(query: str, history: str = "") -> dict:
@@ -220,36 +121,6 @@ Use {{}} for filters when there are none."""
     filters = _sanitize_filters(raw_filters)
 
     return {"intent": intent, "rewritten": rewritten, "filters": filters}
-
-
-_NUMERIC_FILTER_KEYS = {"price_min", "price_max", "ram_min", "storage_min", "battery_min"}
-
-# Words the LLM sometimes mislabels as a "brand" but that match no product's
-# metadata.brand (they are operating systems, form factors, or generic terms).
-# Treating them as a brand filter wrongly zeroes out retrieval, so drop them and
-# let semantic search handle the intent instead.
-_NON_BRAND_WORDS = {
-    "android", "ios", "iphoneos", "ipados", "windows", "macos", "harmonyos",
-    "smartphone", "phone", "điện thoại", "laptop", "tablet", "máy tính",
-}
-
-
-def _sanitize_filters(raw: dict) -> dict:
-    """Keep only known keys with valid values; coerce numerics; drop empties."""
-    out: dict = {}
-    brand = raw.get("brand")
-    if isinstance(brand, str) and brand.strip():
-        if brand.strip().lower() not in _NON_BRAND_WORDS:
-            out["brand"] = brand.strip()
-    for key in _NUMERIC_FILTER_KEYS:
-        value = raw.get(key)
-        if value is None or value == "":
-            continue
-        try:
-            out[key] = float(value)
-        except (TypeError, ValueError):
-            continue
-    return out
 
 
 def rewrite_query_for_retrieval(query: str, history: str = "") -> str:

@@ -39,7 +39,7 @@ def _looks_like_prompt_leak(text: str) -> bool:
     if any(marker in normalized for marker in _STRONG_LEAK_MARKERS):
         return True
     weak_hits = sum(1 for marker in _WEAK_LEAK_MARKERS if marker in normalized)
-    return weak_hits >= 2
+    return weak_hits >= 5
 
 
 def _sse(event: dict) -> str:
