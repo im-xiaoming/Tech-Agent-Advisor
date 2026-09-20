@@ -1,33 +1,31 @@
-![Hongkongdoll](./images/image.png)
+# Tech Agent Advisor
 
-# Vạn Tượng Thiên Cơ
+Tech Agent Advisor là ứng dụng chatbot tư vấn sản phẩm công nghệ sử dụng Django, Qdrant, LangGraph và LLM. Người dùng nhập câu hỏi, hệ thống phân loại ý định, truy xuất tài liệu liên quan, xếp hạng lại kết quả, kiểm tra căn cứ và trả lời theo luồng SSE.
 
-Tech Chatbot RAG Multi-Agent App là một pháp đàn vấn đáp công nghệ, lấy Django làm thân, Qdrant làm linh mạch tri thức, LangGraph làm trận đồ điều phối, LLM làm nguyên thần sinh đáp. Người dùng nhập vấn, hệ thống phân ý, triệu hồi tư liệu, tái xếp hạng, kiểm chứng căn cứ, rồi xuất đáp theo dòng SSE.
+## Tổng quan
 
-## Tông Môn Tổng Lược
+- `landing`: trang giới thiệu tại `/`.
+- `chat`: giao diện hỏi đáp, streaming token và lưu lịch sử theo tài khoản.
+- `accounts`: đăng nhập, đăng ký, đăng xuất và quản lý lịch sử hội thoại của người dùng.
+- `manager`: quản lý `.config/config.yaml` và theo dõi log hội thoại.
+- `rag_engine`: xử lý RAG, bao gồm ingestion, vector store, retriever, agents và guardrails.
+- `crawler`: thu thập dữ liệu sản phẩm từ CellphoneS vào `data/cellphones_mobile.jsonl`.
+- `data`: thư mục dữ liệu; một phần dữ liệu lớn được quản lý bằng DVC.
 
-- `landing`: tiên hiệp môn hộ, mở đầu tại `/`.
-- `chat`: chính điện vấn đáp, streaming token, lưu lịch sử theo tài khoản.
-- `accounts`: đăng nhập, đăng ký, đăng xuất, bảo hộ lịch sử hội thoại.
-- `manager`: quản trị `.config/config.yaml` và giám sát log hội thoại.
-- `rag_engine`: nội công RAG, gồm ingestion, vector store, retriever, agents, guardrails.
-- `crawler`: thu thập pháp liệu sản phẩm từ CellphoneS về `data/cellphones_mobile.jsonl`.
-- `data`: kho nguyên liệu; một phần dữ liệu lớn được quản bằng DVC.
+## Kiến trúc
 
-## Linh Mạch Kiến Trúc
+Luồng xử lý chính:
 
-Luồng vấn đáp:
-
-1. Người dùng vào `/chat/` sau khi đăng nhập.
+1. Người dùng đăng nhập và truy cập `/chat/`.
 2. Frontend gửi câu hỏi tới `/message/`.
-3. `supervisor_agent` phân đạo: `smalltalk`, `product_advice`, hoặc `invalid`.
-4. Nếu là tư vấn sản phẩm, `retrieval_agent` truy hồi tài liệu từ Qdrant.
-5. Reranker và bộ kiểm chứng citation/groundedness thẩm định căn cứ.
-6. `advisor_agent` sinh đáp theo token stream.
-7. `manager.ChatLog` ghi lại query, answer, sources, latency, groundedness.
-8. `accounts.ChatConversation` lưu lịch sử hội thoại theo user.
+3. `supervisor_agent` phân loại câu hỏi thành `smalltalk`, `product_advice` hoặc `invalid`.
+4. Nếu là câu hỏi tư vấn sản phẩm, `retrieval_agent` truy xuất tài liệu từ Qdrant.
+5. Reranker và các bộ kiểm tra citation/groundedness đánh giá lại căn cứ.
+6. `advisor_agent` sinh câu trả lời theo token stream.
+7. `manager.ChatLog` ghi lại query, answer, sources, latency và groundedness.
+8. `accounts.ChatConversation` lưu lịch sử hội thoại theo từng user.
 
-## Khai Sơn Lập Đạo
+## Cài đặt
 
 Tạo môi trường:
 
@@ -59,44 +57,44 @@ Khởi tạo cơ sở dữ liệu:
 python manage.py migrate
 ```
 
-Tạo admin:
+Tạo tài khoản admin:
 
 ```powershell
 python manage.py createsuperuser
 ```
 
-Khai mở pháp đàn:
+Chạy server:
 
 ```powershell
 python manage.py runserver
 ```
 
-## Trúc Cơ Tri Thức
+## Cấu hình
 
-Config chính nằm tại:
+File cấu hình chính:
 
 ```text
 .config/config.yaml
 ```
 
-Các mục trọng yếu:
+Các nhóm cấu hình quan trọng:
 
-- `chunking`: phân mảnh văn bản.
-- `retriever`: ngưỡng truy hồi, hybrid dense+sparse, self-query filter.
-- `reranker`: tái xếp hạng, groundedness, tái sinh đáp khi căn cứ yếu.
-- `chat_history`: số lượt giữ lại, độ dài lịch sử.
-- `embedding`: provider, model, dimension.
-- `loader`: `jsonl` hoặc `csv`.
+- `chunking`: thiết lập phân mảnh văn bản.
+- `retriever`: ngưỡng truy xuất, hybrid dense+sparse và self-query filter.
+- `reranker`: xếp hạng lại kết quả, kiểm tra groundedness và sinh lại câu trả lời khi căn cứ yếu.
+- `chat_history`: số lượt hội thoại được giữ lại và độ dài lịch sử.
+- `embedding`: provider, model và dimension.
+- `loader`: định dạng dữ liệu đầu vào, hiện hỗ trợ `jsonl` hoặc `csv`.
 
-Có thể chỉnh trực tiếp qua admin:
+Có thể chỉnh cấu hình trực tiếp qua:
 
 ```text
 /manager/config/
 ```
 
-Lưu ý: config được đọc lúc import runtime, sau khi đổi `.config/config.yaml` nên restart server để linh khí mới nhập toàn cục.
+Lưu ý: cấu hình được đọc khi runtime import module. Sau khi sửa `.config/config.yaml`, nên restart server để ứng dụng nhận cấu hình mới.
 
-## Luyện Khí Dữ Liệu
+## Dữ liệu và chỉ mục RAG
 
 Thu thập dữ liệu CellphoneS:
 
@@ -104,73 +102,73 @@ Thu thập dữ liệu CellphoneS:
 python crawler/crawler.py
 ```
 
-Xây lại chỉ mục RAG vào Qdrant:
+Xây lại chỉ mục RAG trong Qdrant:
 
 ```powershell
 python manage.py build_rag_index
 ```
 
-Nếu dữ liệu lớn đi qua DVC:
+Nếu dữ liệu lớn được quản lý bằng DVC:
 
 ```powershell
 dvc pull
 ```
 
-Đẩy pháp liệu lên Dagshub remote:
+Đẩy dữ liệu lên Dagshub remote:
 
 ```powershell
 git push dagshub minh:main
 ```
 
-## Đạo Môn Truy Cập
+## Đường dẫn chính
 
-- `/`: Landing page tiên hiệp.
-- `/accounts/login/`: Đăng nhập.
-- `/accounts/register/`: Đăng ký.
-- `/accounts/logout/`: Xuất môn.
-- `/chat/`: Chính điện chatbot.
+- `/`: landing page.
+- `/accounts/login/`: đăng nhập.
+- `/accounts/register/`: đăng ký.
+- `/accounts/logout/`: đăng xuất.
+- `/chat/`: giao diện chatbot.
 - `/history/`: API lịch sử chat của user.
 - `/admin/`: Django admin.
-- `/manager/config/`: Quản lý file cấu hình.
-- `/manager/logs/`: Giám sát chat log và hallucination flag.
+- `/manager/config/`: quản lý file cấu hình.
+- `/manager/logs/`: theo dõi chat log và hallucination flag.
 
-## Nội Công RAG
+## RAG engine
 
-Các tầng chính trong `rag_engine`:
+Các phần chính trong `rag_engine`:
 
 - `core/config.py`: đọc `.config/config.yaml` và biến môi trường.
 - `core/llm.py`: kết nối Ollama hoặc Gemini, hỗ trợ stream.
 - `core/embedding.py`: khởi tạo embedding theo provider.
-- `rag/loader.py`: nạp `jsonl` hoặc `csv`.
-- `rag/chunking.py`: phân chunk.
-- `rag/vector_store_qdrant.py`: dựng và nạp Qdrant collection.
-- `rag/retriever.py`: similarity search, filter, threshold.
-- `rag/tools`: reranker, citation, groundedness, filter.
-- `agents`: supervisor, retrieval, advisor, guardrails.
+- `rag/loader.py`: nạp dữ liệu `jsonl` hoặc `csv`.
+- `rag/chunking.py`: chia văn bản thành chunk.
+- `rag/vector_store_qdrant.py`: tạo và nạp Qdrant collection.
+- `rag/retriever.py`: similarity search, filter và threshold.
+- `rag/tools`: reranker, citation, groundedness và filter.
+- `agents`: supervisor, retrieval, advisor và guardrails.
 
-## Hộ Pháp Quản Trị
+## Manager
 
-Manager có hai pháp khí:
+Manager cung cấp hai nhóm chức năng:
 
-- Config manager: sửa `.config/config.yaml` bằng form rộng và vùng YAML lớn, ghi thẳng file, không lưu database.
-- Chat log manager: xem query, answer, context, retrieved docs, sources, latency, groundedness và đánh dấu `ok`, `suspicious`, `confirmed`.
+- Config manager: sửa `.config/config.yaml` bằng form và vùng YAML, ghi trực tiếp vào file, không lưu trong database.
+- Chat log manager: xem query, answer, context, retrieved docs, sources, latency, groundedness và đánh dấu trạng thái `ok`, `suspicious`, `confirmed`.
 
-Muốn thấy mục manager trong Django admin, đăng nhập bằng staff/superuser rồi vào:
+Để truy cập phần manager trong Django admin, đăng nhập bằng tài khoản staff/superuser rồi vào:
 
 ```text
 /admin/
 ```
 
-## Hội Thoại Và Lưu Ảnh
+## Lịch sử hội thoại
 
 Chat history được lưu theo tài khoản:
 
 - Frontend tải lịch sử từ `/history/`.
-- Khi thêm/xóa/clear hội thoại, frontend đồng bộ về server.
-- Server lưu vào model `accounts.ChatConversation`.
-- Nếu server lỗi tạm thời, frontend còn fallback bằng `localStorage`.
+- Khi thêm, xóa hoặc clear hội thoại, frontend đồng bộ dữ liệu về server.
+- Server lưu dữ liệu vào model `accounts.ChatConversation`.
+- Nếu server lỗi tạm thời, frontend fallback bằng `localStorage`.
 
-## Pháp Chú Vận Hành Nhanh
+## Chạy nhanh
 
 ```powershell
 .\venv\Scripts\activate
@@ -179,17 +177,17 @@ python manage.py build_rag_index
 python manage.py runserver
 ```
 
-Sau đó nhập cảnh:
+Sau đó mở:
 
 ```text
 http://127.0.0.1:8000/
 ```
 
-## Cấm Kỵ Thường Gặp
+## Lỗi thường gặp
 
 - Qdrant chưa có collection: chạy lại `python manage.py build_rag_index`.
-- Đổi embedding model nhưng dimension không khớp: sửa `.config/config.yaml`, xóa/rebuild collection.
-- Bật hybrid search: cần rebuild index để có dense + sparse vectors.
+- Đổi embedding model nhưng dimension không khớp: sửa `.config/config.yaml`, sau đó xóa hoặc rebuild collection.
+- Bật hybrid search: cần rebuild index để có dense và sparse vectors.
 - Đổi config nhưng app chưa nhận: restart Django server.
-- Dùng Gemini: phải có `GOOGLE_API_KEY` hoặc `GEMINI_API_KEY`.
+- Dùng Gemini: cần có `GOOGLE_API_KEY` hoặc `GEMINI_API_KEY`.
 - Dùng Ollama: local Ollama server phải đang chạy và đã có model tương ứng.
